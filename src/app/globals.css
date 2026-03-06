@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root {
+  --gold: #D4A017;
+  --gold-light: #F0C850;
+  --gold-dark: #B8860B;
+  --dark: #0A0A0A;
+  --dark-light: #1A1A1A;
+  --dark-lighter: #2A2A2A;
+  --danger: #E94560;
+  --success: #2ECC71;
+  --warning: #F39C12;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--dark);
+  color: #F5F5F5;
+}
+
+@theme {
+  --color-gold: #D4A017;
+  --color-gold-light: #F0C850;
+  --color-gold-dark: #B8860B;
+  --color-dark: #0A0A0A;
+  --color-dark-light: #1A1A1A;
+  --color-dark-lighter: #2A2A2A;
+  --color-danger: #E94560;
+  --color-success: #2ECC71;
+  --color-warning: #F39C12;
+}
+
+.input-field {
+  @apply w-full px-4 py-2.5 rounded-lg bg-dark-light border border-gray-700 text-white text-sm focus:border-gold focus:outline-none;
+}
+
+select.input-field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
