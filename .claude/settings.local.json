@@ -17,7 +17,29 @@
       "Bash(find C:Usersfernando.admingoldLionsrccomponents -type f -name *.tsx -o -name *.ts)",
       "Bash(find C:Usersfernando.admingoldLionsupabase -type f -name *.sql)",
       "Bash(find C:Usersfernando.admingoldLion -maxdepth 2 -type f \\\\\\(-name tailwind.config.* -o -name .env* -o -name tsconfig.json \\\\\\))",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(vercel:*)",
+      "WebFetch(domain:vercel.com)",
+      "Bash(ls src/app/\\\\\\(aluno\\\\\\)/ -la)",
+      "Bash(ls src/app/\\\\\\(aluno\\\\\\)/aluno/)",
+      "Bash(ls src/app/\\\\\\(aluno\\\\\\)/professor/)",
+      "Bash(python3 -c \":*)",
+      "Bash(ls -la \"\\(aluno\\)/\")",
+      "Bash(cp \"\\(aluno\\)/layout.tsx\" \"\\(aluno\\)/aluno/layout.tsx\")",
+      "Bash(cp \"\\(aluno\\)/layout.tsx\" \"\\(aluno\\)/professor/layout.tsx\")",
+      "Bash(mv \"\\(aluno\\)/aluno\" aluno)",
+      "Bash(mv \"\\(aluno\\)/professor\" professor)",
+      "Bash(rm \"\\(aluno\\)/layout.tsx\")",
+      "Bash(rmdir \"\\(aluno\\)\")",
+      "Bash(ls \"\\(app\\)/\")",
+      "Bash(for dir:*)",
+      "Bash(do mv:*)",
+      "Bash(done)",
+      "Bash(cp \"\\(app\\)/layout.tsx\" .)",
+      "Bash(ls \"\\(app\\)\")",
+      "Bash(do cp:*)",
+      "Bash(rm \"\\(app\\)/layout.tsx\")",
+      "Bash(rmdir \"\\(app\\)\")"
     ]
   }
 }
