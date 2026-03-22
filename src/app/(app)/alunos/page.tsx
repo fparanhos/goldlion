@@ -1,59 +1,63 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { alunos as mockAlunos } from "@/lib/mock-data";
 import { nomeModalidade, corModalidade, corStatus } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import type { Modalidade } from "@/types";
 
+const POR_PAGINA = 20;
+
 export default function AlunosPage() {
   const [busca, setBusca] = useState("");
   const [filtroModalidade, setFiltroModalidade] = useState<Modalidade | "todas">("todas");
+  const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [alunos, setAlunos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pagina, setPagina] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [pendentesCount, setPendentesCount] = useState(0);
+
+  const fetchAlunos = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        pagina: String(pagina),
+        porPagina: String(POR_PAGINA),
+      });
+      if (filtroModalidade !== "todas") params.set("modalidade", filtroModalidade);
+
+      const res = await fetch(`/api/alunos?${params}`);
+      const data = await res.json();
+
+      if (data.alunos) {
+        setAlunos(data.alunos);
+        setTotal(data.total);
+        setPendentesCount((data.alunos as any[]).filter((a: any) => a.status === "pendente").length);
+      }
+    } catch {
+      setAlunos([]);
+      setTotal(0);
+    }
+    setLoading(false);
+  }, [filtroModalidade, pagina]);
 
   useEffect(() => {
-    async function fetchAlunos() {
-      try {
-        const supabase = createClient();
-        let query = supabase
-          .from("alunos")
-          .select("*, perfis!inner(nome, email, telefone, foto_url)")
-          .order("perfis(nome)");
-
-        if (filtroModalidade !== "todas") {
-          query = query.contains("modalidades", [filtroModalidade]);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-        setAlunos(data || []);
-      } catch {
-        // Fallback para mock
-        const filtered = filtroModalidade === "todas"
-          ? mockAlunos
-          : mockAlunos.filter((a) => a.modalidades.includes(filtroModalidade));
-        setAlunos(
-          filtered.map((a) => ({
-            ...a,
-            perfis: { nome: a.nome, email: a.email, telefone: a.telefone },
-          }))
-        );
-      }
-      setLoading(false);
-    }
-
     fetchAlunos();
+  }, [fetchAlunos]);
+
+  useEffect(() => {
+    setPagina(0);
   }, [filtroModalidade]);
 
-  const alunosFiltrados = busca
-    ? alunos.filter((a: any) => {
-        const nome = a.perfis?.nome || a.nome || "";
-        return nome.toLowerCase().includes(busca.toLowerCase());
-      })
-    : alunos;
+  const alunosFiltrados = alunos.filter((a: any) => {
+    const nome = a.perfis?.nome || a.nome || "";
+    const matchBusca = !busca || nome.toLowerCase().includes(busca.toLowerCase());
+    const matchStatus = filtroStatus === "todos" || a.status === filtroStatus;
+    return matchBusca && matchStatus;
+  });
+
+  const totalPaginas = Math.ceil(total / POR_PAGINA);
 
   return (
     <div className="space-y-4">
@@ -79,15 +83,51 @@ export default function AlunosPage() {
         ))}
       </div>
 
-      <p className="text-xs text-gray-500">
-        {loading ? "Carregando..." : `${alunosFiltrados.length} aluno(s)`}
-      </p>
+      {pendentesCount > 0 && (
+        <button
+          onClick={() => setFiltroStatus(filtroStatus === "pendente" ? "todos" : "pendente")}
+          className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            filtroStatus === "pendente"
+              ? "bg-orange-500 text-white"
+              : "bg-orange-500/20 border border-orange-500/40 text-orange-400"
+          }`}
+        >
+          {pendentesCount} cadastro(s) aguardando aprovacao
+        </button>
+      )}
+
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-500">
+          {loading ? "Carregando..." : `${total} aluno(s)`}
+        </p>
+        {totalPaginas > 1 && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPagina((p) => Math.max(0, p - 1))}
+              disabled={pagina === 0}
+              className="px-2 py-1 rounded text-xs bg-dark-light text-gray-400 disabled:opacity-30"
+            >
+              Anterior
+            </button>
+            <span className="text-xs text-gray-400">
+              {pagina + 1} / {totalPaginas}
+            </span>
+            <button
+              onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
+              disabled={pagina >= totalPaginas - 1}
+              className="px-2 py-1 rounded text-xs bg-dark-light text-gray-400 disabled:opacity-30"
+            >
+              Proximo
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="space-y-2">
         {alunosFiltrados.map((aluno: any) => {
           const nome = aluno.perfis?.nome || aluno.nome;
           const telefone = aluno.perfis?.telefone || aluno.telefone;
-          const iniciais = nome
+          const iniciais = (nome || "?")
             .split(" ")
             .map((n: string) => n[0])
             .join("")
@@ -112,7 +152,7 @@ export default function AlunosPage() {
                 <StatusBadge label={aluno.status} colorClass={corStatus(aluno.status)} />
               </div>
               <div className="flex gap-1.5 mt-2">
-                {aluno.modalidades.map((mod: Modalidade) => (
+                {(aluno.modalidades || []).map((mod: Modalidade) => (
                   <span key={mod} className={`px-2 py-0.5 rounded text-xs text-white ${corModalidade(mod)}`}>
                     {nomeModalidade(mod)}
                   </span>
@@ -126,7 +166,35 @@ export default function AlunosPage() {
             </Link>
           );
         })}
+
+        {!loading && alunosFiltrados.length === 0 && (
+          <div className="bg-dark-light rounded-xl p-6 text-center">
+            <p className="text-gray-500 text-sm">Nenhum aluno encontrado.</p>
+          </div>
+        )}
       </div>
+
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2 pb-4">
+          <button
+            onClick={() => setPagina((p) => Math.max(0, p - 1))}
+            disabled={pagina === 0}
+            className="px-3 py-2 rounded-lg text-sm bg-dark-light text-gray-400 disabled:opacity-30"
+          >
+            Anterior
+          </button>
+          <span className="text-sm text-gray-400">
+            Pagina {pagina + 1} de {totalPaginas}
+          </span>
+          <button
+            onClick={() => setPagina((p) => Math.min(totalPaginas - 1, p + 1))}
+            disabled={pagina >= totalPaginas - 1}
+            className="px-3 py-2 rounded-lg text-sm bg-dark-light text-gray-400 disabled:opacity-30"
+          >
+            Proximo
+          </button>
+        </div>
+      )}
 
       <Link
         href="/alunos/novo"

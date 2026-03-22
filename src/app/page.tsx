@@ -21,7 +21,6 @@ export default function LoginPage() {
     setLoading(true);
     setErro("");
 
-    // Se Supabase nao configurado, modo demo
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
     if (!supabaseUrl || supabaseUrl.includes("SEU-PROJETO")) {
       router.push("/dashboard");
@@ -41,7 +40,32 @@ export default function LoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      // Buscar perfil via API (service role, sem RLS)
+      const res = await fetch("/api/me");
+      const me = await res.json();
+
+      // Se aluno pendente, bloquear acesso
+      if (me.perfil === "aluno" && me.statusAluno === "pendente") {
+        // Fazer logout
+        await supabase.auth.signOut();
+        setErro("Seu cadastro esta aguardando aprovacao de um professor. Tente novamente mais tarde.");
+        setLoading(false);
+        return;
+      }
+
+      // Se senha temporaria, forcar troca
+      if (me.senhaTemporaria) {
+        router.push("/trocar-senha");
+        return;
+      }
+
+      if (me.perfil === "aluno") {
+        router.push("/aluno");
+      } else if (me.perfil === "professor") {
+        router.push("/professor");
+      } else {
+        router.push("/dashboard");
+      }
     } catch {
       router.push("/dashboard");
     }
@@ -53,11 +77,11 @@ export default function LoginPage() {
         <div className="text-center mb-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo-gold.jpeg"
+            src="/logo-gold.png"
             alt="Gold Lion Team"
-            width={120}
-            height={120}
-            className="mx-auto mb-4 rounded-full"
+            width={160}
+            height={160}
+            className="mx-auto mb-4 rounded-full border-2 border-gold shadow-lg shadow-gold/30"
           />
           <h1 className="text-3xl font-black text-gold">GOLD LION</h1>
           <p className="text-gray-400 text-sm mt-1">Team - Sistema de Gestao</p>
@@ -87,6 +111,12 @@ export default function LoginPage() {
 
           {erro && <p className="text-danger text-sm">{erro}</p>}
 
+          <div className="text-right">
+            <a href="/recuperar-senha" className="text-xs text-gray-400 hover:text-gold">
+              Esqueci minha senha
+            </a>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
@@ -96,7 +126,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-gray-500 text-xs mt-8">
+        <p className="text-center text-gray-400 text-sm mt-6">
+          Novo aluno?{" "}
+          <a href="/cadastro" className="text-gold font-medium hover:underline">
+            Cadastre-se aqui
+          </a>
+        </p>
+        <p className="text-center text-gray-500 text-xs mt-4">
           Gold Lion Academy v1.0
         </p>
       </div>

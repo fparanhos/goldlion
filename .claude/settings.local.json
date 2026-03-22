@@ -7,7 +7,17 @@
       "Bash(npx next:*)",
       "Bash(ls:*)",
       "Bash(cp:*)",
-      "Bash(npx vercel:*)"
+      "Bash(npx vercel:*)",
+      "Bash(npx supabase:*)",
+      "Bash(PGPASSWORD=\"3T8zGwFjg6NanK0v\" psql:*)",
+      "Bash(where psql:*)",
+      "Bash(curl:*)",
+      "Bash(npm list:*)",
+      "Bash(node:*)",
+      "Bash(find C:Usersfernando.admingoldLionsrccomponents -type f -name *.tsx -o -name *.ts)",
+      "Bash(find C:Usersfernando.admingoldLionsupabase -type f -name *.sql)",
+      "Bash(find C:Usersfernando.admingoldLion -maxdepth 2 -type f \\\\\\(-name tailwind.config.* -o -name .env* -o -name tsconfig.json \\\\\\))",
+      "Bash(find:*)"
     ]
   }
 }

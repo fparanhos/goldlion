@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isDemoMode } from "@/lib/supabase/client";
 import { checkins as mockCheckins, alunos as mockAlunos } from "@/lib/mock-data";
 import { nomeModalidade, formatarDataHora } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
@@ -28,6 +28,7 @@ export default function CheckInPage() {
   useEffect(() => {
     async function fetchHistorico() {
       try {
+        if (isDemoMode) throw new Error("demo");
         const supabase = createClient();
         const { data, error } = await supabase
           .from("checkins")

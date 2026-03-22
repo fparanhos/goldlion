@@ -2,8 +2,6 @@
 
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { alunos as mockAlunos, pagamentos as mockPags, checkins as mockCheckins } from "@/lib/mock-data";
 import {
   nomeModalidade, corModalidade, corStatus, corFaixa,
   formatarData, formatarMoeda, corStatusPagamento,
@@ -18,68 +16,31 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
   const [checkinsAluno, setCheckinsAluno] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState(false);
-  const [statusEdit, setStatusEdit] = useState("");
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchAluno() {
       try {
-        const supabase = createClient();
-
-        const [alunoRes, pagsRes, ciRes] = await Promise.all([
-          supabase
-            .from("alunos")
-            .select("*, perfis!inner(nome, email, telefone, foto_url, criado_em), planos(nome, tipo, valor)")
-            .eq("id", id)
-            .single(),
-          supabase
-            .from("pagamentos")
-            .select("*")
-            .eq("aluno_id", id)
-            .order("data_vencimento", { ascending: false }),
-          supabase
-            .from("checkins")
-            .select("*")
-            .eq("aluno_id", id)
-            .order("data_hora_entrada", { ascending: false })
-            .limit(10),
-        ]);
-
-        if (alunoRes.error) throw alunoRes.error;
-
-        setAluno(alunoRes.data);
-        setPagamentos(pagsRes.data || []);
-        setCheckinsAluno(ciRes.data || []);
-      } catch {
-        // Mock
-        const mock = mockAlunos.find((a) => a.id === id);
-        if (mock) {
-          setAluno({
-            ...mock,
-            perfis: { nome: mock.nome, email: mock.email, telefone: mock.telefone, criado_em: mock.criadoEm },
-            data_nascimento: mock.dataNascimento,
-            contato_emergencia: mock.contatoEmergencia,
-            telefone_emergencia: mock.telefoneEmergencia,
-            data_inicio_plano: mock.dataInicioPlano,
-            data_fim_plano: mock.dataFimPlano,
-          });
-          setPagamentos(mockPags.filter((p) => p.alunoId === id).map((p) => ({
-            ...p, data_vencimento: p.dataVencimento, data_pagamento: p.dataPagamento, forma_pagamento: p.formaPagamento,
-          })));
-          setCheckinsAluno(mockCheckins.filter((c) => c.alunoId === id).map((c) => ({
-            ...c, data_hora_entrada: c.dataHoraEntrada, data_hora_saida: c.dataHoraSaida,
-          })));
+        const res = await fetch(`/api/alunos/${id}`);
+        const data = await res.json();
+        if (res.ok) {
+          setAluno(data.aluno);
+          setPagamentos(data.pagamentos || []);
+          setCheckinsAluno(data.checkins || []);
         }
-      }
+      } catch { /* */ }
       setLoading(false);
     }
-    fetch();
+    fetchAluno();
   }, [id]);
 
   async function alterarStatus(novoStatus: string) {
     try {
-      const supabase = createClient();
-      await supabase.from("alunos").update({ status: novoStatus }).eq("id", id);
-    } catch { /* mock */ }
+      await fetch(`/api/alunos/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+    } catch { /* */ }
     setAluno((prev: any) => ({ ...prev, status: novoStatus }));
     setEditando(false);
   }
@@ -97,9 +58,9 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
     );
   }
 
-  const nome = aluno.perfis?.nome || aluno.nome;
-  const email = aluno.perfis?.email || aluno.email;
-  const telefone = aluno.perfis?.telefone || aluno.telefone;
+  const nome = aluno.perfis?.nome || aluno.nome || "—";
+  const email = aluno.perfis?.email || aluno.email || "—";
+  const telefone = aluno.perfis?.telefone || aluno.telefone || "—";
   const iniciais = nome.split(" ").map((n: string) => n[0]).join("").slice(0, 2);
 
   return (
@@ -128,7 +89,7 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
       <section className="bg-dark-light rounded-xl p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Plano e Modalidades</h3>
         <div className="flex gap-1.5 flex-wrap">
-          {aluno.modalidades.map((mod: any) => (
+          {(aluno.modalidades || []).map((mod: any) => (
             <span key={mod} className={`px-3 py-1 rounded-full text-xs text-white ${corModalidade(mod)}`}>
               {nomeModalidade(mod)}
             </span>
@@ -143,12 +104,12 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <p className="text-gray-500">Plano</p>
-            <p className="text-white capitalize">{aluno.planos?.nome || aluno.plano}</p>
+            <p className="text-white capitalize">{aluno.planos?.nome || aluno.plano || "—"}</p>
           </div>
           <div>
             <p className="text-gray-500">Vigencia</p>
             <p className="text-white">
-              {formatarData(aluno.data_inicio_plano || aluno.dataInicioPlano)} - {formatarData(aluno.data_fim_plano || aluno.dataFimPlano)}
+              {formatarData(aluno.data_inicio_plano)} - {formatarData(aluno.data_fim_plano)}
             </p>
           </div>
         </div>
@@ -157,10 +118,10 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
       {/* Dados pessoais */}
       <section className="bg-dark-light rounded-xl p-4 space-y-2">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Dados Pessoais</h3>
-        <InfoRow label="CPF" value={aluno.cpf || "-"} />
-        <InfoRow label="Nascimento" value={aluno.data_nascimento ? formatarData(aluno.data_nascimento) : "-"} />
-        <InfoRow label="Emergencia" value={`${aluno.contato_emergencia || "-"} - ${aluno.telefone_emergencia || "-"}`} />
-        <InfoRow label="Membro desde" value={formatarData(aluno.perfis?.criado_em || aluno.criadoEm)} />
+        <InfoRow label="CPF" value={aluno.cpf || "—"} />
+        <InfoRow label="Nascimento" value={aluno.data_nascimento ? formatarData(aluno.data_nascimento) : "—"} />
+        <InfoRow label="Emergencia" value={`${aluno.contato_emergencia || "—"} - ${aluno.telefone_emergencia || "—"}`} />
+        <InfoRow label="Membro desde" value={formatarData(aluno.perfis?.criado_em)} />
       </section>
 
       {/* Pagamentos */}
@@ -203,26 +164,60 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
 
       {/* Acoes */}
       <div className="space-y-2">
+        {aluno.status === "pendente" && (
+          <button
+            onClick={() => alterarStatus("ativo")}
+            className="w-full py-3 rounded-lg bg-success text-white font-bold text-sm"
+          >
+            Aprovar Cadastro
+          </button>
+        )}
+
         {!editando ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setEditando(true)}
+                className="py-3 rounded-lg bg-gold text-black font-medium text-sm"
+              >
+                Alterar Status
+              </button>
+              <button
+                onClick={() => { if (confirm("Desativar este aluno?")) alterarStatus("cancelado"); }}
+                className="py-3 rounded-lg border border-danger text-danger font-medium text-sm"
+              >
+                Desativar
+              </button>
+            </div>
             <button
-              onClick={() => setEditando(true)}
-              className="py-3 rounded-lg bg-gold text-black font-medium text-sm"
+              onClick={async () => {
+                if (!confirm("Resetar a senha deste aluno para 123456?")) return;
+                try {
+                  const res = await fetch(`/api/alunos/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ resetSenha: true }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    alert("Senha resetada para 123456. O aluno devera trocar no proximo login.");
+                  } else {
+                    alert("Erro: " + (data.error || "Falha ao resetar"));
+                  }
+                } catch {
+                  alert("Erro ao resetar senha");
+                }
+              }}
+              className="w-full py-3 rounded-lg border border-warning text-warning font-medium text-sm"
             >
-              Alterar Status
-            </button>
-            <button
-              onClick={() => { if (confirm("Desativar este aluno?")) alterarStatus("cancelado"); }}
-              className="py-3 rounded-lg border border-danger text-danger font-medium text-sm"
-            >
-              Desativar
+              Resetar Senha
             </button>
           </div>
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-gray-400">Alterar status para:</p>
             <div className="grid grid-cols-2 gap-2">
-              {(["ativo", "inadimplente", "trancado", "cancelado"] as const).map((s) => (
+              {(["pendente", "ativo", "inadimplente", "trancado", "cancelado"] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => alterarStatus(s)}

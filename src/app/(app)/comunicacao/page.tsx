@@ -20,6 +20,27 @@ export default function ComunicacaoPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+    const isDemoMode = !supabaseUrl || supabaseUrl.includes("SEU-PROJETO");
+
+    function loadMock() {
+      setMsgs(
+        mockMsgs
+          .filter((m) => m.canal === canalAtivo)
+          .map((m) => ({
+            ...m,
+            perfis: { nome: m.remetenteNome, perfil: "admin" },
+            criado_em: m.criadoEm,
+          }))
+      );
+      setUsandoMock(true);
+    }
+
+    if (isDemoMode) {
+      loadMock();
+      return;
+    }
+
     const supabase = createClient();
 
     async function fetchMensagens() {
@@ -35,22 +56,12 @@ export default function ComunicacaoPage() {
         setMsgs(data || []);
         setUsandoMock(false);
       } catch {
-        setMsgs(
-          mockMsgs
-            .filter((m) => m.canal === canalAtivo)
-            .map((m) => ({
-              ...m,
-              perfis: { nome: m.remetenteNome, perfil: "admin" },
-              criado_em: m.criadoEm,
-            }))
-        );
-        setUsandoMock(true);
+        loadMock();
       }
     }
 
     fetchMensagens();
 
-    // Realtime
     const channel = supabase
       .channel(`msgs-${canalAtivo}`)
       .on(

@@ -1,8 +1,8 @@
 export type Modalidade = "muaythai" | "boxe" | "jiujitsu";
 
-export type StatusAluno = "ativo" | "inadimplente" | "trancado" | "cancelado";
+export type StatusAluno = "pendente" | "ativo" | "inadimplente" | "trancado" | "cancelado";
 
-export type TipoPlano = "mensal" | "trimestral" | "semestral" | "anual";
+export type TipoPlano = "diaria" | "mensal" | "trimestral" | "semestral" | "anual";
 
 export type FormaPagamento = "pix" | "cartao" | "dinheiro" | "boleto";
 

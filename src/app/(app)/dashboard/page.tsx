@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isDemoMode } from "@/lib/supabase/client";
 import { alunos as mockAlunos, pagamentos as mockPags, checkins as mockCheckins, aulas as mockAulas } from "@/lib/mock-data";
 import { formatarMoeda, nomeModalidade, diasDaSemanaCurto } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
@@ -48,6 +48,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchDash() {
+      if (isDemoMode) return;
       try {
         const supabase = createClient();
         const hojeStr = new Date().toISOString().split("T")[0];

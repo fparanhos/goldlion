@@ -6,7 +6,7 @@
 -- Tipos enumerados
 CREATE TYPE perfil_usuario AS ENUM ('admin', 'professor', 'aluno');
 CREATE TYPE modalidade AS ENUM ('muaythai', 'boxe', 'jiujitsu');
-CREATE TYPE status_aluno AS ENUM ('ativo', 'inadimplente', 'trancado', 'cancelado');
+CREATE TYPE status_aluno AS ENUM ('pendente', 'ativo', 'inadimplente', 'trancado', 'cancelado');
 CREATE TYPE tipo_plano AS ENUM ('mensal', 'trimestral', 'semestral', 'anual');
 CREATE TYPE forma_pagamento AS ENUM ('pix', 'cartao', 'dinheiro', 'boleto');
 CREATE TYPE status_pagamento AS ENUM ('pago', 'pendente', 'atrasado', 'cancelado');
@@ -72,6 +72,8 @@ CREATE TABLE pagamentos (
   referencia TEXT NOT NULL, -- ex: "03/2026"
   asaas_payment_id TEXT, -- ID da cobranca no Asaas
   asaas_invoice_url TEXT, -- Link de pagamento
+  comprovante_url TEXT, -- URL do comprovante enviado pelo aluno
+  sinalizado_em TIMESTAMPTZ, -- Data em que o aluno sinalizou o pagamento
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

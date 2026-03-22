@@ -32,6 +32,7 @@ export function corModalidade(mod: Modalidade): string {
 
 export function corStatus(status: StatusAluno): string {
   const cores: Record<StatusAluno, string> = {
+    pendente: "bg-orange-500 text-white",
     ativo: "bg-success text-white",
     inadimplente: "bg-danger text-white",
     trancado: "bg-warning text-black",

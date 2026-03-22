@@ -35,11 +35,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redireciona para login se nao autenticado (exceto pagina de login e callback)
+  // Redireciona para login se nao autenticado (exceto pagina de login, callback e API)
   if (
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/api/") &&
+    !request.nextUrl.pathname.startsWith("/aluno") &&
+    !request.nextUrl.pathname.startsWith("/professor") &&
+    !request.nextUrl.pathname.startsWith("/cadastro") &&
+    !request.nextUrl.pathname.startsWith("/recuperar-senha") &&
+    !request.nextUrl.pathname.startsWith("/redefinir-senha") &&
+    !request.nextUrl.pathname.startsWith("/trocar-senha") &&
     request.nextUrl.pathname !== "/"
   ) {
     const url = request.nextUrl.clone();
@@ -47,12 +54,8 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redireciona para dashboard se ja autenticado e esta na pagina de login
-  if (user && request.nextUrl.pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  // Se ja autenticado e na pagina de login, nao redirecionar automaticamente
+  // O login page ja faz o redirect baseado no perfil
 
   return supabaseResponse;
 }

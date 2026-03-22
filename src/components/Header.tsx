@@ -11,6 +11,9 @@ const titles: Record<string, string> = {
   "/financeiro": "Financeiro",
   "/checkin": "Check-in",
   "/comunicacao": "Comunicacao",
+  "/professores": "Professores",
+  "/planos": "Planos",
+  "/aulas": "Grade Horaria",
 };
 
 export default function Header() {
@@ -30,16 +33,17 @@ export default function Header() {
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
         <div className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-gold.jpeg" alt="Gold Lion" width={32} height={32} className="rounded-full" />
+          <img src="/logo-gold.png" alt="Gold Lion" width={32} height={32} className="rounded-full" />
           <h1 className="text-lg font-bold text-gold">{title}</h1>
         </div>
         <div className="relative">
           <button
             onClick={() => setMenuAberto(!menuAberto)}
-            className="w-8 h-8 rounded-full overflow-hidden"
+            className="w-8 h-8 flex items-center justify-center"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-gold.jpeg" alt="Menu" width={32} height={32} />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-6 h-6 text-gray-300">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
           </button>
           {menuAberto && (
             <>
@@ -56,6 +60,42 @@ export default function Header() {
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-lighter"
                 >
                   Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuAberto(false);
+                    router.push("/planos");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-lighter"
+                >
+                  Planos
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuAberto(false);
+                    router.push("/aulas");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-lighter"
+                >
+                  Grade Horaria
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuAberto(false);
+                    router.push("/checkin");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-lighter"
+                >
+                  Check-ins
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuAberto(false);
+                    router.push("/comunicacao");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-lighter"
+                >
+                  Avisos
                 </button>
                 <button
                   onClick={() => {

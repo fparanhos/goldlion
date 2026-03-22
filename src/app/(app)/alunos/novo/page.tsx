@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, isDemoMode } from "@/lib/supabase/client";
 import type { Modalidade, TipoPlano } from "@/types";
 
 export default function NovoAlunoPage() {
@@ -27,6 +27,7 @@ export default function NovoAlunoPage() {
   useEffect(() => {
     async function fetchPlanos() {
       try {
+        if (isDemoMode) throw new Error("demo");
         const supabase = createClient();
         const { data } = await supabase
           .from("planos")
@@ -68,56 +69,23 @@ export default function NovoAlunoPage() {
     setErro("");
 
     try {
-      const supabase = createClient();
-
-      // Tentar criar via Supabase Auth admin (precisa de service role)
-      // Para a versao client, usamos signup normal
-      const email = form.email || `${form.cpf?.replace(/\D/g, "") || Date.now()}@goldlion.app`;
-
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: form.senha,
-        options: {
-          data: { nome: form.nome, perfil: "aluno" },
-        },
+      const res = await fetch("/api/alunos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
 
-      if (authError) throw authError;
+      const data = await res.json();
 
-      if (authData.user) {
-        // Atualizar perfil
-        await supabase
-          .from("perfis")
-          .update({ telefone: form.telefone })
-          .eq("id", authData.user.id);
-
-        // Criar registro aluno
-        const dataInicio = new Date().toISOString().split("T")[0];
-        const dataFim = new Date();
-        dataFim.setMonth(dataFim.getMonth() + 1);
-
-        await supabase.from("alunos").insert({
-          id: authData.user.id,
-          cpf: form.cpf || null,
-          data_nascimento: form.dataNascimento || null,
-          contato_emergencia: form.contatoEmergencia || null,
-          telefone_emergencia: form.telefoneEmergencia || null,
-          modalidades: form.modalidades,
-          plano_id: form.planoId || null,
-          status: "ativo",
-          data_inicio_plano: dataInicio,
-          data_fim_plano: dataFim.toISOString().split("T")[0],
-          observacoes: form.observacoes || null,
-        });
+      if (!res.ok) {
+        setErro(data.error || "Erro ao cadastrar aluno");
+        setLoading(false);
+        return;
       }
 
       router.push("/alunos");
     } catch (err: any) {
-      console.warn("Supabase error, mock mode:", err.message);
-      // Mock mode
-      alert("Aluno cadastrado com sucesso! (modo demonstracao)");
-      router.push("/alunos");
-    } finally {
+      setErro("Erro ao cadastrar: " + err.message);
       setLoading(false);
     }
   }
