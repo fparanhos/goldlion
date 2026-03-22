@@ -39,7 +39,20 @@
       "Bash(ls \"\\(app\\)\")",
       "Bash(do cp:*)",
       "Bash(rm \"\\(app\\)/layout.tsx\")",
-      "Bash(rmdir \"\\(app\\)\")"
+      "Bash(rmdir \"\\(app\\)\")",
+      "WebFetch(domain:gold-lion-6tixvzmht-fernando-paranhos-projects.vercel.app)",
+      "WebFetch(domain:gold-lion-seven.vercel.app)",
+      "Bash(mkdir -p \"\\(app\\)\" \"\\(aluno\\)\")",
+      "Bash(mv alunos:*)",
+      "Bash(mv aulas:*)",
+      "Bash(mv checkin:*)",
+      "Bash(mv comunicacao:*)",
+      "Bash(mv aluno:*)",
+      "Bash(mv professor:*)",
+      "Bash(mv \"\\(app\\)/alunos/layout.tsx\" \"\\(app\\)/layout.tsx\")",
+      "Bash(do rm:*)",
+      "Bash(mv \"\\(aluno\\)/aluno/layout.tsx\" \"\\(aluno\\)/layout.tsx\")",
+      "Bash(rm -f \"\\(aluno\\)/professor/layout.tsx\")"
     ]
   }
 }
