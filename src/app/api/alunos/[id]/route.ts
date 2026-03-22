@@ -59,13 +59,21 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const { status, resetSenha, novaSenha } = body;
+    const {
+      status, resetSenha, novaSenha,
+      nome, telefone,
+      cpf, dataNascimento, contatoEmergencia, telefoneEmergencia,
+      modalidades, planoId, faixa, observacoes,
+      dataInicioPlano, dataFimPlano,
+    } = body;
 
+    // Atualizar status do aluno
     if (status) {
       const { error } = await supabase.from("alunos").update({ status }).eq("id", id);
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Resetar senha
     if (resetSenha) {
       const senha = novaSenha || "123456";
       const { error } = await supabase.auth.admin.updateUserById(id, {
@@ -73,6 +81,33 @@ export async function PUT(
         user_metadata: { senha_temporaria: true },
       });
       if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    // Atualizar perfil (nome, telefone)
+    if (nome || telefone) {
+      const perfilUpdate: any = {};
+      if (nome) perfilUpdate.nome = nome;
+      if (telefone) perfilUpdate.telefone = telefone;
+      const { error } = await supabase.from("perfis").update(perfilUpdate).eq("id", id);
+      if (error) return NextResponse.json({ error: "Erro ao atualizar perfil: " + error.message }, { status: 400 });
+    }
+
+    // Atualizar dados do aluno
+    const alunoUpdate: any = {};
+    if (cpf !== undefined) alunoUpdate.cpf = cpf || null;
+    if (dataNascimento !== undefined) alunoUpdate.data_nascimento = dataNascimento || null;
+    if (contatoEmergencia !== undefined) alunoUpdate.contato_emergencia = contatoEmergencia || null;
+    if (telefoneEmergencia !== undefined) alunoUpdate.telefone_emergencia = telefoneEmergencia || null;
+    if (modalidades !== undefined) alunoUpdate.modalidades = modalidades;
+    if (planoId !== undefined) alunoUpdate.plano_id = planoId || null;
+    if (faixa !== undefined) alunoUpdate.faixa = faixa || null;
+    if (observacoes !== undefined) alunoUpdate.observacoes = observacoes || null;
+    if (dataInicioPlano !== undefined) alunoUpdate.data_inicio_plano = dataInicioPlano || null;
+    if (dataFimPlano !== undefined) alunoUpdate.data_fim_plano = dataFimPlano || null;
+
+    if (Object.keys(alunoUpdate).length > 0) {
+      const { error } = await supabase.from("alunos").update(alunoUpdate).eq("id", id);
+      if (error) return NextResponse.json({ error: "Erro ao atualizar aluno: " + error.message }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });
