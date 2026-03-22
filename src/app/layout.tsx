@@ -1,22 +1,30 @@
-"use client";
+import type { Metadata, Viewport } from "next";
+import "./globals.css";
 
-import { useEffect } from "react";
-import Header from "@/components/Header";
-import BottomNav from "@/components/BottomNav";
+export const metadata: Metadata = {
+  title: "Gold Lion Academy",
+  description: "Sistema de gestao para academia de artes marciais",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Gold Lion",
+  },
+};
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-  // Registrar Service Worker
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(console.error);
-    }
-  }, []);
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#0A0A0A",
+};
 
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-dark max-w-lg mx-auto relative">
-      <Header />
-      <main className="pb-20 px-4 py-4">{children}</main>
-      <BottomNav />
-    </div>
+    <html lang="pt-BR">
+      <body className="antialiased">
+        {children}
+      </body>
+    </html>
   );
 }
