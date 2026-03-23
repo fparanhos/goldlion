@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   // Usar service role para buscar perfil
   const supabase = createClient(
