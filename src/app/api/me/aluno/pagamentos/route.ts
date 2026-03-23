@@ -92,6 +92,12 @@ export async function PUT(request: NextRequest) {
     const fileName = `${user.id}/${pagamentoId}_${Date.now()}.${ext}`;
     const arrayBuffer = await arquivo.arrayBuffer();
 
+    // Garantir que o bucket existe
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find((b: any) => b.id === "comprovantes")) {
+      await supabase.storage.createBucket("comprovantes", { public: true });
+    }
+
     const { error: uploadError } = await supabase.storage
       .from("comprovantes")
       .upload(fileName, arrayBuffer, {

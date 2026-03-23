@@ -110,6 +110,40 @@ export async function PUT(
       if (error) return NextResponse.json({ error: "Erro ao atualizar aluno: " + error.message }, { status: 400 });
     }
 
+    // Se plano foi atribuido, criar pagamento pendente automaticamente (se nao existir um pendente)
+    if (planoId) {
+      const { data: plano } = await supabase.from("planos").select("valor, nome").eq("id", planoId).single();
+      if (plano) {
+        const agora = new Date();
+        const mesRef = `${String(agora.getMonth() + 1).padStart(2, "0")}/${agora.getFullYear()}`;
+
+        // Verificar se ja existe pagamento pendente para esta referencia
+        const { data: pagExistente } = await supabase
+          .from("pagamentos")
+          .select("id")
+          .eq("aluno_id", id)
+          .eq("referencia", mesRef)
+          .in("status", ["pendente", "atrasado", "pago"])
+          .limit(1);
+
+        if (!pagExistente || pagExistente.length === 0) {
+          // Vencimento = dia 10 do mes atual ou proximo mes se ja passou
+          const vencimento = new Date(agora.getFullYear(), agora.getMonth(), 10);
+          if (vencimento < agora) {
+            vencimento.setMonth(vencimento.getMonth() + 1);
+          }
+
+          await supabase.from("pagamentos").insert({
+            aluno_id: id,
+            valor: plano.valor,
+            data_vencimento: vencimento.toISOString().split("T")[0],
+            referencia: mesRef,
+            status: "pendente",
+          });
+        }
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
