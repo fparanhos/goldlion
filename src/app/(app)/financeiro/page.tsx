@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { createClient, isDemoMode } from "@/lib/supabase/client";
 import { pagamentos as mockPags, alunos as mockAlunos } from "@/lib/mock-data";
-import { formatarMoeda, formatarData, corStatusPagamento } from "@/lib/utils";
+import { formatarMoeda, formatarData, corStatusPagamento, corStatus } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import type { StatusPagamento } from "@/types";
 
@@ -22,7 +23,7 @@ export default function FinanceiroPage() {
         const supabase = createClient();
         let query = supabase
           .from("pagamentos")
-          .select("*, alunos!inner(id, perfis!inner(nome))")
+          .select("*, alunos!inner(id, status, perfis!inner(nome))")
           .order("data_vencimento", { ascending: false });
 
         if (filtro === "sinalizados") {
@@ -174,8 +175,21 @@ export default function FinanceiroPage() {
         {pagamentos.map((pag: any) => (
           <div key={pag.id} className="bg-dark-light rounded-lg p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-sm">{pag.alunos?.perfis?.nome}</p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {pag.alunos?.id ? (
+                    <Link href={`/alunos/${pag.alunos.id}`} className="font-medium text-sm text-gold hover:underline">
+                      {pag.alunos?.perfis?.nome || "—"}
+                    </Link>
+                  ) : (
+                    <p className="font-medium text-sm">{pag.alunos?.perfis?.nome || "—"}</p>
+                  )}
+                  {pag.alunos?.status && pag.alunos.status !== "ativo" && (
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${corStatus(pag.alunos.status)}`}>
+                      {pag.alunos.status}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400">Ref: {pag.referencia}</p>
               </div>
               <div className="flex items-center gap-2">

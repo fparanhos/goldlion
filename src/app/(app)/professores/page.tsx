@@ -103,6 +103,33 @@ export default function ProfessoresPage() {
     setFormLoading(false);
   }
 
+  async function excluirProfessor(prof: any) {
+    const totalAulas = (prof.aulas || []).length;
+
+    if (totalAulas === 0) {
+      if (!confirm(`Excluir o professor "${prof.nome}"? Esta acao nao pode ser desfeita.`)) return;
+    } else {
+      const ok = confirm(
+        `O professor "${prof.nome}" tem ${totalAulas} aula(s) cadastrada(s).\n\n` +
+        `Confirmar a exclusao vai REMOVER as aulas E o professor. Esta acao nao pode ser desfeita.\n\n` +
+        `Deseja continuar?`
+      );
+      if (!ok) return;
+    }
+
+    try {
+      const res = await fetch(`/api/professores?id=${prof.id}&force=1`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Erro: " + (data.error || "Falha ao excluir"));
+        return;
+      }
+      fetchProfessores();
+    } catch (err: any) {
+      alert("Erro: " + err.message);
+    }
+  }
+
   const diasSemana: Record<number, string> = { 0: "Dom", 1: "Seg", 2: "Ter", 3: "Qua", 4: "Qui", 5: "Sex", 6: "Sab" };
 
   return (
@@ -216,12 +243,20 @@ export default function ProfessoresPage() {
                 <p className="text-xs text-gray-400">{prof.email}</p>
                 {prof.telefone && <p className="text-xs text-gray-400">{prof.telefone}</p>}
               </div>
-              <button
-                onClick={() => iniciarEdicao(prof)}
-                className="px-3 py-1.5 rounded-lg text-xs bg-dark text-gold border border-gold/30"
-              >
-                Editar
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => iniciarEdicao(prof)}
+                  className="px-3 py-1.5 rounded-lg text-xs bg-dark text-gold border border-gold/30"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => excluirProfessor(prof)}
+                  className="px-3 py-1.5 rounded-lg text-xs bg-dark text-danger border border-danger/30"
+                >
+                  Excluir
+                </button>
+              </div>
             </div>
             <div className="flex gap-1.5 flex-wrap">
               {(prof.modalidades || []).map((mod: string) => (

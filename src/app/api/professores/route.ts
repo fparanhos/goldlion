@@ -101,3 +101,53 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const supabase = getSupabase();
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+  const force = searchParams.get("force") === "1";
+
+  if (!id) return NextResponse.json({ error: "ID obrigatorio" }, { status: 400 });
+
+  try {
+    // Verificar aulas vinculadas
+    const { data: aulas, error: aulasErr } = await supabase
+      .from("aulas")
+      .select("id, modalidade, dia_semana, hora_inicio, hora_fim")
+      .eq("professor_id", id);
+
+    if (aulasErr) {
+      return NextResponse.json({ error: aulasErr.message }, { status: 400 });
+    }
+
+    if (aulas && aulas.length > 0 && !force) {
+      return NextResponse.json(
+        {
+          error: "Professor tem aulas vinculadas",
+          aulas,
+          requireForce: true,
+        },
+        { status: 409 }
+      );
+    }
+
+    // Force: apagar aulas primeiro (FK aulas.professor_id -> perfis)
+    if (aulas && aulas.length > 0) {
+      const { error: delAulasErr } = await supabase.from("aulas").delete().eq("professor_id", id);
+      if (delAulasErr) {
+        return NextResponse.json({ error: "Erro ao remover aulas: " + delAulasErr.message }, { status: 400 });
+      }
+    }
+
+    // Apagar usuario do auth (perfis cascateia via ON DELETE CASCADE)
+    const { error: authErr } = await supabase.auth.admin.deleteUser(id);
+    if (authErr) {
+      return NextResponse.json({ error: "Erro ao remover usuario: " + authErr.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, aulasRemovidas: aulas?.length || 0 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
