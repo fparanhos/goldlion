@@ -13,6 +13,7 @@ const titles: Record<string, string> = {
   "/comunicacao": "Comunicacao",
   "/professores": "Professores",
   "/planos": "Planos",
+  "/modalidades": "Modalidades",
   "/aulas": "Grade Horaria",
 };
 
@@ -69,6 +70,15 @@ export default function Header() {
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-lighter"
                 >
                   Planos
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuAberto(false);
+                    router.push("/modalidades");
+                  }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-dark-lighter"
+                >
+                  Modalidades
                 </button>
                 <button
                   onClick={() => {

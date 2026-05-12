@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { alunos as mockAlunos, checkins as mockCheckins } from "@/lib/mock-data";
-import { nomeModalidade } from "@/lib/utils";
-import type { Modalidade } from "@/types";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const ALUNO_MOCK_ID = "a1";
 const ACADEMIA_LAT = Number(process.env.NEXT_PUBLIC_ACADEMIA_LAT) || -23.5505;
@@ -19,10 +18,11 @@ function calcDist(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export default function AlunoCheckinPage() {
+  const { byMap } = useModalidades();
   const aluno = mockAlunos.find((a) => a.id === ALUNO_MOCK_ID)!;
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [mensagem, setMensagem] = useState("");
-  const [modalidadeSel, setModalidadeSel] = useState<Modalidade>(aluno.modalidades[0] as Modalidade);
+  const [modalidadeSel, setModalidadeSel] = useState<string>(aluno.modalidades[0]);
 
   const meusCheckins = mockCheckins.filter((c) => c.alunoId === ALUNO_MOCK_ID);
 
@@ -95,12 +95,12 @@ export default function AlunoCheckinPage() {
             {aluno.modalidades.map((mod) => (
               <button
                 key={mod}
-                onClick={() => setModalidadeSel(mod as Modalidade)}
+                onClick={() => setModalidadeSel(mod)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   modalidadeSel === mod ? "bg-gold text-black" : "bg-dark text-gray-400 border border-gray-700"
                 }`}
               >
-                {nomeModalidade(mod)}
+                {byMap[mod]?.nome ?? mod}
               </button>
             ))}
           </div>
@@ -139,7 +139,7 @@ export default function AlunoCheckinPage() {
           {meusCheckins.map((ci) => (
             <div key={ci.id} className="bg-dark-light rounded-xl p-3 flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm text-white">{nomeModalidade(ci.modalidade)}</p>
+                <p className="font-medium text-sm text-white">{byMap[ci.modalidade]?.nome ?? ci.modalidade}</p>
                 <p className="text-xs text-gray-400">
                   {new Date(ci.dataHoraEntrada).toLocaleDateString("pt-BR")} as{" "}
                   {new Date(ci.dataHoraEntrada).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}

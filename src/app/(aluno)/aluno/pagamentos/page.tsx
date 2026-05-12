@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { formatarMoeda } from "@/lib/utils";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const statusConfig: Record<string, { label: string; bg: string; text: string }> = {
   pago: { label: "Pago", bg: "bg-success/20", text: "text-success" },
@@ -11,6 +12,7 @@ const statusConfig: Record<string, { label: string; bg: string; text: string }> 
 };
 
 export default function AlunoPagamentosPage() {
+  const { byMap } = useModalidades();
   const [pagamentos, setPagamentos] = useState<any[]>([]);
   const [aluno, setAluno] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -127,8 +129,8 @@ export default function AlunoPagamentosPage() {
           </p>
           <div className="flex gap-1.5 justify-center mt-2">
             {(aluno.modalidades || []).map((mod: string) => (
-              <span key={mod} className="px-2 py-0.5 rounded text-xs bg-gold/20 text-gold capitalize">
-                {mod === "muaythai" ? "Muay Thai" : mod === "jiujitsu" ? "Jiu-Jitsu" : mod.charAt(0).toUpperCase() + mod.slice(1)}
+              <span key={mod} className="px-2 py-0.5 rounded text-xs bg-gold/20 text-gold">
+                {byMap[mod]?.nome ?? mod}
               </span>
             ))}
           </div>

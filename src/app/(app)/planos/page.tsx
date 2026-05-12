@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { nomeModalidade } from "@/lib/utils";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const TIPOS = [
   { value: "diaria", label: "Diaria" },
@@ -11,9 +11,8 @@ const TIPOS = [
   { value: "anual", label: "Anual" },
 ];
 
-const MODALIDADES = ["muaythai", "boxe", "jiujitsu"] as const;
-
 export default function PlanosPage() {
+  const { modalidadesAtivas, byMap } = useModalidades();
   const [planos, setPlanos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -187,19 +186,19 @@ export default function PlanosPage() {
 
           <div>
             <label className="block text-xs text-gray-400 mb-1">Modalidades *</label>
-            <div className="flex gap-2">
-              {MODALIDADES.map((mod) => (
+            <div className="flex gap-2 flex-wrap">
+              {modalidadesAtivas.map((mod) => (
                 <button
-                  key={mod}
+                  key={mod.slug}
                   type="button"
-                  onClick={() => toggleModalidade(mod)}
+                  onClick={() => toggleModalidade(mod.slug)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    form.modalidades.includes(mod)
+                    form.modalidades.includes(mod.slug)
                       ? "bg-gold text-black"
                       : "bg-dark text-gray-400 border border-gray-700"
                   }`}
                 >
-                  {nomeModalidade(mod)}
+                  {mod.nome}
                 </button>
               ))}
             </div>
@@ -242,9 +241,9 @@ export default function PlanosPage() {
             </div>
 
             <div className="flex gap-1.5 flex-wrap">
-              {(plano.modalidades || []).map((mod: any) => (
+              {(plano.modalidades || []).map((mod: string) => (
                 <span key={mod} className="px-2 py-0.5 rounded text-xs bg-dark text-gray-300">
-                  {nomeModalidade(mod as any)}
+                  {byMap[mod]?.nome ?? mod}
                 </span>
               ))}
             </div>

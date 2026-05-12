@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient, isDemoMode } from "@/lib/supabase/client";
 import { aulas as mockAulas } from "@/lib/mock-data";
-import { nomeModalidade, diasDaSemanaCurto } from "@/lib/utils";
+import { diasDaSemanaCurto } from "@/lib/utils";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 export default function ProfessorDashboard() {
+  const { byMap } = useModalidades();
   const [perfil, setPerfil] = useState<any>(null);
   const [minhasAulas, setMinhasAulas] = useState<any[]>([]);
   const [checkinsHoje, setCheckinsHoje] = useState<any[]>([]);
@@ -87,7 +89,7 @@ export default function ProfessorDashboard() {
             {aulasHoje.map((aula: any) => (
               <div key={aula.id} className="bg-dark-light rounded-xl p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">{nomeModalidade(aula.modalidade)}</p>
+                  <p className="font-medium text-white">{byMap[aula.modalidade]?.nome ?? aula.modalidade}</p>
                   <p className="text-xs text-gray-400">{aula.vagas} vagas</p>
                 </div>
                 <p className="text-gold font-mono font-medium">
@@ -120,7 +122,7 @@ export default function ProfessorDashboard() {
               <div key={ci.id} className="bg-dark-light rounded-xl p-3 flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm text-white">{ci.alunos?.perfis?.nome}</p>
-                  <p className="text-xs text-gray-400">{nomeModalidade(ci.modalidade)}</p>
+                  <p className="text-xs text-gray-400">{byMap[ci.modalidade]?.nome ?? ci.modalidade}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-400">
@@ -147,7 +149,7 @@ export default function ProfessorDashboard() {
           {minhasAulas.map((aula: any) => (
             <div key={aula.id} className="bg-dark-light rounded-xl p-3 flex items-center justify-between">
               <div>
-                <p className="font-medium text-sm text-white">{nomeModalidade(aula.modalidade)}</p>
+                <p className="font-medium text-sm text-white">{byMap[aula.modalidade]?.nome ?? aula.modalidade}</p>
                 <p className="text-xs text-gray-400">{diasSemana[aula.dia_semana ?? aula.diaSemana]}</p>
               </div>
               <p className="text-gold font-mono text-sm">

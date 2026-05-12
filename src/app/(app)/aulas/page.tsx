@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { nomeModalidade, corModalidade } from "@/lib/utils";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const DIAS: Record<number, string> = { 0: "Domingo", 1: "Segunda", 2: "Terca", 3: "Quarta", 4: "Quinta", 5: "Sexta", 6: "Sabado" };
 const DIAS_CURTO: Record<number, string> = { 0: "Dom", 1: "Seg", 2: "Ter", 3: "Qua", 4: "Qui", 5: "Sex", 6: "Sab" };
-const MODALIDADES = ["muaythai", "boxe", "jiujitsu"] as const;
 
 export default function AulasPage() {
+  const { modalidadesAtivas, byMap } = useModalidades();
   const [aulas, setAulas] = useState<any[]>([]);
   const [professores, setProfessores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,13 +17,19 @@ export default function AulasPage() {
   const [erro, setErro] = useState("");
   const [filtroDia, setFiltroDia] = useState<number | "todos">("todos");
   const [form, setForm] = useState({
-    modalidade: "muaythai",
+    modalidade: "",
     professor_id: "",
     dia_semana: "1",
     hora_inicio: "07:00",
     hora_fim: "08:30",
     vagas: "20",
   });
+
+  useEffect(() => {
+    if (!form.modalidade && modalidadesAtivas.length > 0) {
+      setForm((prev) => ({ ...prev, modalidade: modalidadesAtivas[0].slug }));
+    }
+  }, [modalidadesAtivas, form.modalidade]);
 
   async function fetchAulas() {
     try {
@@ -62,7 +68,7 @@ export default function AulasPage() {
   }
 
   function cancelar() {
-    setForm({ modalidade: "muaythai", professor_id: "", dia_semana: "1", hora_inicio: "07:00", hora_fim: "08:30", vagas: "20" });
+    setForm({ modalidade: modalidadesAtivas[0]?.slug ?? "", professor_id: "", dia_semana: "1", hora_inicio: "07:00", hora_fim: "08:30", vagas: "20" });
     setEditando(null);
     setShowForm(false);
     setErro("");
@@ -149,8 +155,8 @@ export default function AulasPage() {
                 onChange={(e) => setForm({ ...form, modalidade: e.target.value })}
                 className="input-field"
               >
-                {MODALIDADES.map((mod) => (
-                  <option key={mod} value={mod}>{nomeModalidade(mod)}</option>
+                {modalidadesAtivas.map((mod) => (
+                  <option key={mod.slug} value={mod.slug}>{mod.nome}</option>
                 ))}
               </select>
             </div>
@@ -264,8 +270,8 @@ export default function AulasPage() {
                   <div key={aula.id} className="bg-dark-light rounded-xl p-4 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-xs text-white ${corModalidade(aula.modalidade)}`}>
-                          {nomeModalidade(aula.modalidade)}
+                        <span className={`px-2 py-0.5 rounded text-xs text-white ${byMap[aula.modalidade]?.cor ?? "bg-gray-600"}`}>
+                          {byMap[aula.modalidade]?.nome ?? aula.modalidade}
                         </span>
                         <span className="text-gold font-mono text-sm font-medium">
                           {aula.hora_inicio?.slice(0, 5)} - {aula.hora_fim?.slice(0, 5)}

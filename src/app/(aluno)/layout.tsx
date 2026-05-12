@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ModalidadesProvider } from "@/lib/modalidades/ModalidadesProvider";
 
 export default function AlunoLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -13,20 +14,22 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
   }, []);
 
   return (
-    <div className="min-h-screen bg-dark max-w-lg mx-auto relative">
-      <header className="sticky top-0 z-50 bg-dark-light border-b border-gray-800">
-        <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
-          <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-gold.png" alt="Gold Lion" width={32} height={32} className="rounded-full" />
-            <h1 className="text-lg font-bold text-gold">Gold Lion</h1>
+    <ModalidadesProvider>
+      <div className="min-h-screen bg-dark max-w-lg mx-auto relative">
+        <header className="sticky top-0 z-50 bg-dark-light border-b border-gray-800">
+          <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
+            <div className="flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-gold.png" alt="Gold Lion" width={32} height={32} className="rounded-full" />
+              <h1 className="text-lg font-bold text-gold">Gold Lion</h1>
+            </div>
+            <LogoutButton />
           </div>
-          <LogoutButton />
-        </div>
-      </header>
-      <main className="pb-20 px-4 py-4">{children}</main>
-      <AlunoBottomNav />
-    </div>
+        </header>
+        <main className="pb-20 px-4 py-4">{children}</main>
+        <AlunoBottomNav />
+      </div>
+    </ModalidadesProvider>
   );
 }
 

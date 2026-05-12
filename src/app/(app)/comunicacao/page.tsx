@@ -3,16 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { mensagens as mockMsgs } from "@/lib/mock-data";
-
-const canais = ["geral", "muaythai", "boxe", "jiujitsu"] as const;
-const nomeCanal: Record<string, string> = {
-  geral: "Geral",
-  muaythai: "Muay Thai",
-  boxe: "Boxe",
-  jiujitsu: "Jiu-Jitsu",
-};
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 export default function ComunicacaoPage() {
+  const { modalidadesAtivas, byMap } = useModalidades();
+  const canais = ["geral", ...modalidadesAtivas.map((m) => m.slug)];
+  const nomeCanal = (slug: string) => (slug === "geral" ? "Geral" : byMap[slug]?.nome ?? slug);
   const [canalAtivo, setCanalAtivo] = useState<string>("geral");
   const [novaMensagem, setNovaMensagem] = useState("");
   const [msgs, setMsgs] = useState<any[]>([]);
@@ -142,7 +138,7 @@ export default function ComunicacaoPage() {
               canalAtivo === canal ? "bg-gold text-black" : "bg-dark-light text-gray-400"
             }`}
           >
-            {nomeCanal[canal]}
+            {nomeCanal(canal)}
           </button>
         ))}
       </div>
@@ -193,7 +189,7 @@ export default function ComunicacaoPage() {
             type="text"
             value={novaMensagem}
             onChange={(e) => setNovaMensagem(e.target.value)}
-            placeholder={`Mensagem para ${nomeCanal[canalAtivo]}...`}
+            placeholder={`Mensagem para ${nomeCanal(canalAtivo)}...`}
             className="flex-1 px-4 py-2.5 rounded-lg bg-dark border border-gray-700 text-white text-sm focus:border-gold focus:outline-none"
           />
           <button

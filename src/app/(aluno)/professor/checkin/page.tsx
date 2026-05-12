@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { nomeModalidade } from "@/lib/utils";
-import type { Modalidade } from "@/types";
+import { useState, useEffect } from "react";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const ACADEMIA_LAT = Number(process.env.NEXT_PUBLIC_ACADEMIA_LAT) || -23.5505;
 const ACADEMIA_LNG = Number(process.env.NEXT_PUBLIC_ACADEMIA_LNG) || -46.6333;
@@ -17,9 +16,16 @@ function calcDist(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export default function ProfessorCheckinPage() {
+  const { modalidadesAtivas } = useModalidades();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [mensagem, setMensagem] = useState("");
-  const [modalidadeSel, setModalidadeSel] = useState<Modalidade>("muaythai");
+  const [modalidadeSel, setModalidadeSel] = useState<string>("");
+
+  useEffect(() => {
+    if (!modalidadeSel && modalidadesAtivas.length > 0) {
+      setModalidadeSel(modalidadesAtivas[0].slug);
+    }
+  }, [modalidadesAtivas, modalidadeSel]);
 
   function fazerCheckIn() {
     setStatus("loading");
@@ -76,15 +82,15 @@ export default function ProfessorCheckinPage() {
 
         {status === "idle" && (
           <div className="flex gap-2 justify-center flex-wrap">
-            {(["muaythai", "boxe", "jiujitsu"] as const).map((mod) => (
+            {modalidadesAtivas.map((mod) => (
               <button
-                key={mod}
-                onClick={() => setModalidadeSel(mod)}
+                key={mod.slug}
+                onClick={() => setModalidadeSel(mod.slug)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  modalidadeSel === mod ? "bg-gold text-black" : "bg-dark text-gray-400 border border-gray-700"
+                  modalidadeSel === mod.slug ? "bg-gold text-black" : "bg-dark text-gray-400 border border-gray-700"
                 }`}
               >
-                {nomeModalidade(mod)}
+                {mod.nome}
               </button>
             ))}
           </div>

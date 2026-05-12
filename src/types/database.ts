@@ -37,7 +37,7 @@ export type Database = {
           data_nascimento: string | null;
           contato_emergencia: string | null;
           telefone_emergencia: string | null;
-          modalidades: ("muaythai" | "boxe" | "jiujitsu")[];
+          modalidades: string[];
           plano_id: string | null;
           status: "ativo" | "inadimplente" | "trancado" | "cancelado";
           faixa: string | null;
@@ -52,7 +52,7 @@ export type Database = {
           data_nascimento?: string | null;
           contato_emergencia?: string | null;
           telefone_emergencia?: string | null;
-          modalidades?: ("muaythai" | "boxe" | "jiujitsu")[];
+          modalidades?: string[];
           plano_id?: string | null;
           status?: "ativo" | "inadimplente" | "trancado" | "cancelado";
           faixa?: string | null;
@@ -67,7 +67,7 @@ export type Database = {
           data_nascimento?: string | null;
           contato_emergencia?: string | null;
           telefone_emergencia?: string | null;
-          modalidades?: ("muaythai" | "boxe" | "jiujitsu")[];
+          modalidades?: string[];
           plano_id?: string | null;
           status?: "ativo" | "inadimplente" | "trancado" | "cancelado";
           faixa?: string | null;
@@ -120,7 +120,7 @@ export type Database = {
           aluno_id: string;
           data_hora_entrada: string;
           data_hora_saida: string | null;
-          modalidade: "muaythai" | "boxe" | "jiujitsu";
+          modalidade: string;
           latitude: number;
           longitude: number;
           validado: boolean;
@@ -128,7 +128,7 @@ export type Database = {
         };
         Insert: {
           aluno_id: string;
-          modalidade: "muaythai" | "boxe" | "jiujitsu";
+          modalidade: string;
           latitude: number;
           longitude: number;
           data_hora_entrada?: string;
@@ -137,7 +137,7 @@ export type Database = {
         };
         Update: {
           aluno_id?: string;
-          modalidade?: "muaythai" | "boxe" | "jiujitsu";
+          modalidade?: string;
           latitude?: number;
           longitude?: number;
           data_hora_entrada?: string;
@@ -167,7 +167,7 @@ export type Database = {
       aulas: {
         Row: {
           id: string;
-          modalidade: "muaythai" | "boxe" | "jiujitsu";
+          modalidade: string;
           professor_id: string;
           dia_semana: number;
           hora_inicio: string;
@@ -177,7 +177,7 @@ export type Database = {
           criado_em: string;
         };
         Insert: {
-          modalidade: "muaythai" | "boxe" | "jiujitsu";
+          modalidade: string;
           professor_id: string;
           dia_semana: number;
           hora_inicio: string;
@@ -186,7 +186,7 @@ export type Database = {
           ativo?: boolean;
         };
         Update: {
-          modalidade?: "muaythai" | "boxe" | "jiujitsu";
+          modalidade?: string;
           professor_id?: string;
           dia_semana?: number;
           hora_inicio?: string;
@@ -200,7 +200,7 @@ export type Database = {
           id: string;
           nome: string;
           tipo: "mensal" | "trimestral" | "semestral" | "anual";
-          modalidades: ("muaythai" | "boxe" | "jiujitsu")[];
+          modalidades: string[];
           valor: number;
           ativo: boolean;
           criado_em: string;
@@ -208,14 +208,14 @@ export type Database = {
         Insert: {
           nome: string;
           tipo: "mensal" | "trimestral" | "semestral" | "anual";
-          modalidades: ("muaythai" | "boxe" | "jiujitsu")[];
+          modalidades: string[];
           valor: number;
           ativo?: boolean;
         };
         Update: {
           nome?: string;
           tipo?: "mensal" | "trimestral" | "semestral" | "anual";
-          modalidades?: ("muaythai" | "boxe" | "jiujitsu")[];
+          modalidades?: string[];
           valor?: number;
           ativo?: boolean;
         };

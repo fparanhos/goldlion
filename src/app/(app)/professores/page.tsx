@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { nomeModalidade, corModalidade } from "@/lib/utils";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 export default function ProfessoresPage() {
+  const { modalidadesAtivas, byMap } = useModalidades();
   const [professores, setProfessores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -164,19 +165,19 @@ export default function ProfessoresPage() {
               </div>
               <div>
                 <label className="block text-xs text-gray-400 mb-1">Modalidades *</label>
-                <div className="flex gap-2">
-                  {(["muaythai", "boxe", "jiujitsu"] as const).map((mod) => (
+                <div className="flex gap-2 flex-wrap">
+                  {modalidadesAtivas.map((mod) => (
                     <button
-                      key={mod}
+                      key={mod.slug}
                       type="button"
-                      onClick={() => toggleModalidade(mod)}
+                      onClick={() => toggleModalidade(mod.slug)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        form.modalidades.includes(mod)
+                        form.modalidades.includes(mod.slug)
                           ? "bg-gold text-black"
                           : "bg-dark text-gray-400 border border-gray-700"
                       }`}
                     >
-                      {nomeModalidade(mod)}
+                      {mod.nome}
                     </button>
                   ))}
                 </div>
@@ -223,9 +224,9 @@ export default function ProfessoresPage() {
               </button>
             </div>
             <div className="flex gap-1.5 flex-wrap">
-              {(prof.modalidades || []).map((mod: any) => (
-                <span key={mod} className={`px-2 py-0.5 rounded text-xs text-white ${corModalidade(mod as any)}`}>
-                  {nomeModalidade(mod as any)}
+              {(prof.modalidades || []).map((mod: string) => (
+                <span key={mod} className={`px-2 py-0.5 rounded text-xs text-white ${byMap[mod]?.cor ?? "bg-gray-600"}`}>
+                  {byMap[mod]?.nome ?? mod}
                 </span>
               ))}
             </div>
@@ -235,7 +236,7 @@ export default function ProfessoresPage() {
                 {prof.aulas.map((aula: any) => (
                   <div key={aula.id} className="flex items-center justify-between text-sm">
                     <span className="text-gray-300">
-                      {diasSemana[aula.dia_semana]} - {nomeModalidade(aula.modalidade)}
+                      {diasSemana[aula.dia_semana]} - {byMap[aula.modalidade]?.nome ?? aula.modalidade}
                     </span>
                     <span className="text-gold font-mono text-xs">
                       {aula.hora_inicio?.slice(0, 5)} - {aula.hora_fim?.slice(0, 5)}

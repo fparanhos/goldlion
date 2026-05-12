@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { nomeModalidade, formatarMoeda, diasDaSemanaCurto } from "@/lib/utils";
+import { formatarMoeda, diasDaSemanaCurto } from "@/lib/utils";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 export default function AlunoDashboard() {
   const router = useRouter();
+  const { byMap } = useModalidades();
   const [perfil, setPerfil] = useState<any>(null);
   const [aluno, setAluno] = useState<any>(null);
   const [minhasAulas, setMinhasAulas] = useState<any[]>([]);
@@ -87,7 +89,7 @@ export default function AlunoDashboard() {
             <div className="flex gap-1.5 mt-1">
               {(aluno.modalidades || []).map((mod: string) => (
                 <span key={mod} className="px-2 py-0.5 rounded text-xs bg-gold/20 text-gold">
-                  {nomeModalidade(mod as any)}
+                  {byMap[mod]?.nome ?? mod}
                 </span>
               ))}
             </div>
@@ -135,7 +137,7 @@ export default function AlunoDashboard() {
             {minhasAulas.map((aula: any) => (
               <div key={aula.id} className="bg-dark-light rounded-xl p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-white">{nomeModalidade(aula.modalidade)}</p>
+                  <p className="font-medium text-white">{byMap[aula.modalidade]?.nome ?? aula.modalidade}</p>
                   <p className="text-sm text-gray-400">{aula.vagas} vagas</p>
                 </div>
                 <div className="text-right">
@@ -166,7 +168,7 @@ export default function AlunoDashboard() {
             {meusCheckins.map((ci: any) => (
               <div key={ci.id} className="bg-dark-light rounded-xl p-3 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-sm text-white">{nomeModalidade(ci.modalidade)}</p>
+                  <p className="font-medium text-sm text-white">{byMap[ci.modalidade]?.nome ?? ci.modalidade}</p>
                   <p className="text-xs text-gray-400">
                     {new Date(ci.data_hora_entrada).toLocaleDateString("pt-BR")}
                   </p>

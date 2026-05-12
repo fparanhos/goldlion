@@ -1,4 +1,4 @@
-import { Modalidade, StatusAluno, StatusPagamento, Faixa } from "@/types";
+import { StatusAluno, StatusPagamento, Faixa } from "@/types";
 
 export function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -12,23 +12,8 @@ export function formatarDataHora(data: string): string {
   return new Date(data).toLocaleString("pt-BR");
 }
 
-export function nomeModalidade(mod: Modalidade): string {
-  const nomes: Record<Modalidade, string> = {
-    muaythai: "Muay Thai",
-    boxe: "Boxe",
-    jiujitsu: "Jiu-Jitsu",
-  };
-  return nomes[mod];
-}
-
-export function corModalidade(mod: Modalidade): string {
-  const cores: Record<Modalidade, string> = {
-    muaythai: "bg-red-600",
-    boxe: "bg-blue-600",
-    jiujitsu: "bg-purple-600",
-  };
-  return cores[mod];
-}
+// nomeModalidade/corModalidade removidos: modalidades sao dinamicas.
+// Use o hook useModalidades() (src/lib/modalidades/ModalidadesProvider).
 
 export function corStatus(status: StatusAluno): string {
   const cores: Record<StatusAluno, string> = {

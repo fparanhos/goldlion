@@ -5,7 +5,7 @@
 
 -- Tipos enumerados
 CREATE TYPE perfil_usuario AS ENUM ('admin', 'professor', 'aluno');
-CREATE TYPE modalidade AS ENUM ('muaythai', 'boxe', 'jiujitsu');
+-- (modalidades viraram tabela dinamica - veja secao "MODALIDADES" abaixo)
 CREATE TYPE status_aluno AS ENUM ('pendente', 'ativo', 'inadimplente', 'trancado', 'cancelado');
 CREATE TYPE tipo_plano AS ENUM ('mensal', 'trimestral', 'semestral', 'anual');
 CREATE TYPE forma_pagamento AS ENUM ('pix', 'cartao', 'dinheiro', 'boleto');
@@ -29,11 +29,25 @@ CREATE TABLE perfis (
 -- =====================================================
 -- PLANOS
 -- =====================================================
+-- =====================================================
+-- MODALIDADES (dinamicas - gerenciadas via tela admin)
+-- =====================================================
+CREATE TABLE modalidades (
+  slug TEXT PRIMARY KEY,
+  nome TEXT NOT NULL UNIQUE,
+  cor TEXT NOT NULL DEFAULT 'bg-gray-600',
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  ordem SMALLINT NOT NULL DEFAULT 0,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_modalidades_ativo ON modalidades(ativo);
+
 CREATE TABLE planos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   nome TEXT NOT NULL,
   tipo tipo_plano NOT NULL,
-  modalidades modalidade[] NOT NULL,
+  modalidades TEXT[] NOT NULL,
   valor DECIMAL(10,2) NOT NULL,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -48,7 +62,7 @@ CREATE TABLE alunos (
   data_nascimento DATE,
   contato_emergencia TEXT,
   telefone_emergencia TEXT,
-  modalidades modalidade[] NOT NULL DEFAULT '{}',
+  modalidades TEXT[] NOT NULL DEFAULT '{}',
   plano_id UUID REFERENCES planos(id),
   status status_aluno NOT NULL DEFAULT 'ativo',
   faixa faixa_jiu,
@@ -85,7 +99,7 @@ CREATE TABLE checkins (
   aluno_id UUID NOT NULL REFERENCES alunos(id) ON DELETE CASCADE,
   data_hora_entrada TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   data_hora_saida TIMESTAMPTZ,
-  modalidade modalidade NOT NULL,
+  modalidade TEXT NOT NULL REFERENCES modalidades(slug) ON UPDATE CASCADE ON DELETE RESTRICT,
   latitude DOUBLE PRECISION NOT NULL,
   longitude DOUBLE PRECISION NOT NULL,
   validado BOOLEAN NOT NULL DEFAULT FALSE,
@@ -108,7 +122,7 @@ CREATE TABLE mensagens (
 -- =====================================================
 CREATE TABLE aulas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  modalidade modalidade NOT NULL,
+  modalidade TEXT NOT NULL REFERENCES modalidades(slug) ON UPDATE CASCADE ON DELETE RESTRICT,
   professor_id UUID NOT NULL REFERENCES perfis(id),
   dia_semana SMALLINT NOT NULL CHECK (dia_semana BETWEEN 0 AND 6),
   hora_inicio TIME NOT NULL,
@@ -154,6 +168,7 @@ ALTER TABLE checkins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE mensagens ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aulas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE planos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE modalidades ENABLE ROW LEVEL SECURITY;
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 -- Perfis: admin ve tudo, usuario ve o proprio
@@ -242,6 +257,15 @@ CREATE POLICY "Admin gerencia planos" ON planos
     EXISTS (SELECT 1 FROM perfis WHERE id = auth.uid() AND perfil = 'admin')
   );
 
+-- Modalidades: todos veem
+CREATE POLICY "Todos veem modalidades" ON modalidades
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admin gerencia modalidades" ON modalidades
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM perfis WHERE id = auth.uid() AND perfil = 'admin')
+  );
+
 -- Push subscriptions: usuario gerencia as proprias
 CREATE POLICY "Usuario ve proprias subscriptions" ON push_subscriptions
   FOR SELECT USING (user_id = auth.uid());
@@ -297,6 +321,15 @@ BEGIN
   AND data_vencimento < CURRENT_DATE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =====================================================
+-- DADOS INICIAIS: Modalidades padrao
+-- =====================================================
+INSERT INTO modalidades (slug, nome, cor, ordem) VALUES
+  ('muaythai', 'Muay Thai', 'bg-red-600',    1),
+  ('boxe',     'Boxe',      'bg-blue-600',   2),
+  ('jiujitsu', 'Jiu-Jitsu', 'bg-purple-600', 3)
+ON CONFLICT (slug) DO NOTHING;
 
 -- =====================================================
 -- DADOS INICIAIS: Planos padrao

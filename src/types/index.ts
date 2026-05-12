@@ -1,4 +1,6 @@
-export type Modalidade = "muaythai" | "boxe" | "jiujitsu";
+// Slug de modalidade. As modalidades sao gerenciadas dinamicamente na tabela
+// "modalidades" via tela admin; o slug e a chave imutavel (ex: "muaythai").
+export type Modalidade = string;
 
 export type StatusAluno = "pendente" | "ativo" | "inadimplente" | "trancado" | "cancelado";
 

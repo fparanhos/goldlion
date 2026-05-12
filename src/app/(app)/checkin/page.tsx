@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { createClient, isDemoMode } from "@/lib/supabase/client";
 import { checkins as mockCheckins, alunos as mockAlunos } from "@/lib/mock-data";
-import { nomeModalidade, formatarDataHora } from "@/lib/utils";
+import { formatarDataHora } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
-import type { Modalidade } from "@/types";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const ACADEMIA_LAT = Number(process.env.NEXT_PUBLIC_ACADEMIA_LAT) || -23.5505;
 const ACADEMIA_LNG = Number(process.env.NEXT_PUBLIC_ACADEMIA_LNG) || -46.6333;
@@ -20,10 +20,17 @@ function calcDist(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export default function CheckInPage() {
+  const { modalidadesAtivas, byMap } = useModalidades();
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [mensagem, setMensagem] = useState("");
-  const [modalidadeSel, setModalidadeSel] = useState<Modalidade>("muaythai");
+  const [modalidadeSel, setModalidadeSel] = useState<string>("");
   const [historico, setHistorico] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!modalidadeSel && modalidadesAtivas.length > 0) {
+      setModalidadeSel(modalidadesAtivas[0].slug);
+    }
+  }, [modalidadesAtivas, modalidadeSel]);
 
   useEffect(() => {
     async function fetchHistorico() {
@@ -135,16 +142,16 @@ export default function CheckInPage() {
         </div>
 
         {/* Modalidade */}
-        <div className="flex gap-2 justify-center">
-          {(["muaythai", "boxe", "jiujitsu"] as const).map((mod) => (
+        <div className="flex gap-2 justify-center flex-wrap">
+          {modalidadesAtivas.map((mod) => (
             <button
-              key={mod}
-              onClick={() => setModalidadeSel(mod)}
+              key={mod.slug}
+              onClick={() => setModalidadeSel(mod.slug)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                modalidadeSel === mod ? "bg-gold text-black" : "bg-dark text-gray-400"
+                modalidadeSel === mod.slug ? "bg-gold text-black" : "bg-dark text-gray-400"
               }`}
             >
-              {nomeModalidade(mod)}
+              {mod.nome}
             </button>
           ))}
         </div>
@@ -177,7 +184,7 @@ export default function CheckInPage() {
               <div>
                 <p className="font-medium text-sm">{ci.alunos?.perfis?.nome}</p>
                 <p className="text-xs text-gray-400">
-                  {nomeModalidade(ci.modalidade)} - {formatarDataHora(ci.data_hora_entrada || ci.dataHoraEntrada)}
+                  {byMap[ci.modalidade]?.nome ?? ci.modalidade} - {formatarDataHora(ci.data_hora_entrada || ci.dataHoraEntrada)}
                 </p>
               </div>
               <div className="text-right space-y-1">

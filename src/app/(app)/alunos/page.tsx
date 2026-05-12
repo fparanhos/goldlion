@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { nomeModalidade, corModalidade, corStatus } from "@/lib/utils";
+import { corStatus } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
-import type { Modalidade } from "@/types";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const POR_PAGINA = 20;
 
 export default function AlunosPage() {
+  const { modalidadesAtivas, byMap } = useModalidades();
   const [busca, setBusca] = useState("");
-  const [filtroModalidade, setFiltroModalidade] = useState<Modalidade | "todas">("todas");
+  const [filtroModalidade, setFiltroModalidade] = useState<string>("todas");
   const [filtroStatus, setFiltroStatus] = useState<string>("todos");
   const [alunos, setAlunos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +71,7 @@ export default function AlunosPage() {
       />
 
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {(["todas", "muaythai", "boxe", "jiujitsu"] as const).map((mod) => (
+        {["todas", ...modalidadesAtivas.map((m) => m.slug)].map((mod) => (
           <button
             key={mod}
             onClick={() => setFiltroModalidade(mod)}
@@ -78,7 +79,7 @@ export default function AlunosPage() {
               filtroModalidade === mod ? "bg-gold text-black" : "bg-dark-light text-gray-400"
             }`}
           >
-            {mod === "todas" ? "Todas" : nomeModalidade(mod)}
+            {mod === "todas" ? "Todas" : byMap[mod]?.nome ?? mod}
           </button>
         ))}
       </div>
@@ -152,9 +153,9 @@ export default function AlunosPage() {
                 <StatusBadge label={aluno.status} colorClass={corStatus(aluno.status)} />
               </div>
               <div className="flex gap-1.5 mt-2">
-                {(aluno.modalidades || []).map((mod: Modalidade) => (
-                  <span key={mod} className={`px-2 py-0.5 rounded text-xs text-white ${corModalidade(mod)}`}>
-                    {nomeModalidade(mod)}
+                {(aluno.modalidades || []).map((mod: string) => (
+                  <span key={mod} className={`px-2 py-0.5 rounded text-xs text-white ${byMap[mod]?.cor ?? "bg-gray-600"}`}>
+                    {byMap[mod]?.nome ?? mod}
                   </span>
                 ))}
                 {aluno.faixa && (

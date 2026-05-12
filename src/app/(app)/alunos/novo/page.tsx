@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient, isDemoMode } from "@/lib/supabase/client";
-import type { Modalidade, TipoPlano } from "@/types";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 export default function NovoAlunoPage() {
   const router = useRouter();
+  const { modalidadesAtivas } = useModalidades();
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
   const [planos, setPlanos] = useState<any[]>([]);
@@ -19,7 +20,7 @@ export default function NovoAlunoPage() {
     dataNascimento: "",
     contatoEmergencia: "",
     telefoneEmergencia: "",
-    modalidades: [] as Modalidade[],
+    modalidades: [] as string[],
     planoId: "",
     observacoes: "",
   });
@@ -49,7 +50,7 @@ export default function NovoAlunoPage() {
     fetchPlanos();
   }, []);
 
-  function toggleModalidade(mod: Modalidade) {
+  function toggleModalidade(mod: string) {
     setForm((prev) => ({
       ...prev,
       modalidades: prev.modalidades.includes(mod)
@@ -184,19 +185,19 @@ export default function NovoAlunoPage() {
 
       {/* Modalidades */}
       <Field label="Modalidades" required>
-        <div className="flex gap-2">
-          {(["muaythai", "boxe", "jiujitsu"] as const).map((mod) => (
+        <div className="flex gap-2 flex-wrap">
+          {modalidadesAtivas.map((mod) => (
             <button
-              key={mod}
+              key={mod.slug}
               type="button"
-              onClick={() => toggleModalidade(mod)}
+              onClick={() => toggleModalidade(mod.slug)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                form.modalidades.includes(mod)
+                form.modalidades.includes(mod.slug)
                   ? "bg-gold text-black"
                   : "bg-dark-light text-gray-400 border border-gray-700"
               }`}
             >
-              {mod === "muaythai" ? "Muay Thai" : mod === "boxe" ? "Boxe" : "Jiu-Jitsu"}
+              {mod.nome}
             </button>
           ))}
         </div>

@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { nomeModalidade } from "@/lib/utils";
-import type { Modalidade } from "@/types";
+
+interface ModalidadeOpcao {
+  slug: string;
+  nome: string;
+  cor: string;
+}
 
 export default function CadastroPage() {
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
   const [planos, setPlanos] = useState<any[]>([]);
+  const [modalidadesDisponiveis, setModalidadesDisponiveis] = useState<ModalidadeOpcao[]>([]);
   const [form, setForm] = useState({
     nome: "",
     email: "",
@@ -20,22 +25,27 @@ export default function CadastroPage() {
     dataNascimento: "",
     contatoEmergencia: "",
     telefoneEmergencia: "",
-    modalidades: [] as Modalidade[],
+    modalidades: [] as string[],
     planoId: "",
   });
 
   useEffect(() => {
-    async function fetchPlanos() {
+    async function fetchInicial() {
       try {
-        const res = await fetch("/api/planos");
-        const data = await res.json();
-        if (Array.isArray(data)) setPlanos(data.filter((p: any) => p.ativo));
+        const [pRes, mRes] = await Promise.all([
+          fetch("/api/planos"),
+          fetch("/api/modalidades?ativas=1"),
+        ]);
+        const pData = await pRes.json();
+        const mData = await mRes.json();
+        if (Array.isArray(pData)) setPlanos(pData.filter((p: any) => p.ativo));
+        if (Array.isArray(mData)) setModalidadesDisponiveis(mData);
       } catch { /* */ }
     }
-    fetchPlanos();
+    fetchInicial();
   }, []);
 
-  function toggleModalidade(mod: Modalidade) {
+  function toggleModalidade(mod: string) {
     setForm((prev) => ({
       ...prev,
       modalidades: prev.modalidades.includes(mod)
@@ -241,18 +251,18 @@ export default function CadastroPage() {
 
           <Field label="Modalidades" required>
             <div className="flex gap-2 flex-wrap">
-              {(["muaythai", "boxe", "jiujitsu"] as const).map((mod) => (
+              {modalidadesDisponiveis.map((mod) => (
                 <button
-                  key={mod}
+                  key={mod.slug}
                   type="button"
-                  onClick={() => toggleModalidade(mod)}
+                  onClick={() => toggleModalidade(mod.slug)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    form.modalidades.includes(mod)
+                    form.modalidades.includes(mod.slug)
                       ? "bg-gold text-black"
                       : "bg-dark-light text-gray-400 border border-gray-700"
                   }`}
                 >
-                  {nomeModalidade(mod)}
+                  {mod.nome}
                 </button>
               ))}
             </div>

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient, isDemoMode } from "@/lib/supabase/client";
 import { alunos as mockAlunos, pagamentos as mockPags, checkins as mockCheckins, aulas as mockAulas } from "@/lib/mock-data";
-import { formatarMoeda, nomeModalidade, diasDaSemanaCurto } from "@/lib/utils";
+import { formatarMoeda, diasDaSemanaCurto } from "@/lib/utils";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 import StatusBadge from "@/components/StatusBadge";
 
 interface DashData {
@@ -43,6 +44,7 @@ function getMockDashboard(): DashData {
 }
 
 export default function DashboardPage() {
+  const { byMap } = useModalidades();
   const [dash, setDash] = useState<DashData>(getMockDashboard());
   const hoje = new Date().getDay();
 
@@ -108,7 +110,7 @@ export default function DashboardPage() {
             {dash.aulasHoje.map((aula: any) => (
               <div key={aula.id} className="bg-dark-light rounded-lg p-3 flex items-center justify-between">
                 <div>
-                  <p className="font-medium">{nomeModalidade(aula.modalidade)}</p>
+                  <p className="font-medium">{byMap[aula.modalidade]?.nome ?? aula.modalidade}</p>
                   <p className="text-sm text-gray-400">{aula.perfis?.nome || aula.professorNome}</p>
                 </div>
                 <p className="text-gold font-mono text-sm">
@@ -134,7 +136,7 @@ export default function DashboardPage() {
               <div key={ci.id} className="bg-dark-light rounded-lg p-3 flex items-center justify-between">
                 <div>
                   <p className="font-medium text-sm">{ci.alunos?.perfis?.nome}</p>
-                  <p className="text-xs text-gray-400">{nomeModalidade(ci.modalidade)}</p>
+                  <p className="text-xs text-gray-400">{byMap[ci.modalidade]?.nome ?? ci.modalidade}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs text-gray-400">

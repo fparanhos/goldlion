@@ -2,21 +2,16 @@
 
 import { useState } from "react";
 import { mensagens as mockMsgs, alunos as mockAlunos } from "@/lib/mock-data";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 const ALUNO_MOCK_ID = "a1";
 
-const canais = ["geral", "muaythai", "boxe", "jiujitsu"] as const;
-const nomeCanal: Record<string, string> = {
-  geral: "Geral",
-  muaythai: "Muay Thai",
-  boxe: "Boxe",
-  jiujitsu: "Jiu-Jitsu",
-};
-
 export default function AlunoAvisosPage() {
+  const { byMap } = useModalidades();
   const aluno = mockAlunos.find((a) => a.id === ALUNO_MOCK_ID)!;
-  // Aluno ve canais geral + suas modalidades
-  const meusCanais = ["geral", ...aluno.modalidades];
+  // Aluno ve canais geral + suas modalidades (que estejam ativas)
+  const meusCanais = ["geral", ...aluno.modalidades.filter((m) => byMap[m]?.ativo !== false)];
+  const nomeCanal = (slug: string) => (slug === "geral" ? "Geral" : byMap[slug]?.nome ?? slug);
   const [canalAtivo, setCanalAtivo] = useState<string>("geral");
 
   const msgs = mockMsgs
@@ -31,7 +26,7 @@ export default function AlunoAvisosPage() {
     <div className="space-y-4">
       {/* Canais */}
       <div className="flex gap-2 overflow-x-auto pb-1">
-        {canais.filter((c) => meusCanais.includes(c)).map((canal) => (
+        {meusCanais.map((canal) => (
           <button
             key={canal}
             onClick={() => setCanalAtivo(canal)}
@@ -39,7 +34,7 @@ export default function AlunoAvisosPage() {
               canalAtivo === canal ? "bg-gold text-black" : "bg-dark-light text-gray-400"
             }`}
           >
-            {nomeCanal[canal]}
+            {nomeCanal(canal)}
           </button>
         ))}
       </div>

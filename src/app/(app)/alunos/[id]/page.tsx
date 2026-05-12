@@ -3,15 +3,15 @@
 import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  nomeModalidade, corModalidade, corStatus, corFaixa,
-  formatarData, formatarMoeda, corStatusPagamento,
+  corStatus, corFaixa, formatarData, formatarMoeda, corStatusPagamento,
 } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
-import type { Modalidade } from "@/types";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
 export default function AlunoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const { modalidadesAtivas, byMap } = useModalidades();
   const [aluno, setAluno] = useState<any>(null);
   const [pagamentos, setPagamentos] = useState<any[]>([]);
   const [checkinsAluno, setCheckinsAluno] = useState<any[]>([]);
@@ -30,7 +30,7 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
     dataNascimento: "",
     contatoEmergencia: "",
     telefoneEmergencia: "",
-    modalidades: [] as Modalidade[],
+    modalidades: [] as string[],
     planoId: "",
     faixa: "",
     observacoes: "",
@@ -80,7 +80,7 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
     });
   }
 
-  function toggleModalidade(mod: Modalidade) {
+  function toggleModalidade(mod: string) {
     setForm((prev) => ({
       ...prev,
       modalidades: prev.modalidades.includes(mod)
@@ -227,18 +227,18 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
 
           <Field label="Modalidades">
             <div className="flex gap-2 flex-wrap">
-              {(["muaythai", "boxe", "jiujitsu"] as const).map((mod) => (
+              {modalidadesAtivas.map((mod) => (
                 <button
-                  key={mod}
+                  key={mod.slug}
                   type="button"
-                  onClick={() => toggleModalidade(mod)}
+                  onClick={() => toggleModalidade(mod.slug)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    form.modalidades.includes(mod)
+                    form.modalidades.includes(mod.slug)
                       ? "bg-gold text-black"
                       : "bg-dark-light text-gray-400 border border-gray-700"
                   }`}
                 >
-                  {nomeModalidade(mod)}
+                  {mod.nome}
                 </button>
               ))}
             </div>
@@ -323,9 +323,9 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
       <section className="bg-dark-light rounded-xl p-4 space-y-3">
         <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Plano e Modalidades</h3>
         <div className="flex gap-1.5 flex-wrap">
-          {(aluno.modalidades || []).map((mod: any) => (
-            <span key={mod} className={`px-3 py-1 rounded-full text-xs text-white ${corModalidade(mod)}`}>
-              {nomeModalidade(mod)}
+          {(aluno.modalidades || []).map((mod: string) => (
+            <span key={mod} className={`px-3 py-1 rounded-full text-xs text-white ${byMap[mod]?.cor ?? "bg-gray-600"}`}>
+              {byMap[mod]?.nome ?? mod}
             </span>
           ))}
         </div>
@@ -388,7 +388,7 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
           checkinsAluno.slice(0, 5).map((ci: any) => (
             <div key={ci.id} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
               <div>
-                <p className="text-sm">{nomeModalidade(ci.modalidade)}</p>
+                <p className="text-sm">{byMap[ci.modalidade]?.nome ?? ci.modalidade}</p>
                 <p className="text-xs text-gray-400">{new Date(ci.data_hora_entrada).toLocaleString("pt-BR")}</p>
               </div>
               <StatusBadge label={ci.validado ? "OK" : "Pendente"} colorClass={ci.validado ? "bg-success text-white" : "bg-warning text-black"} />
