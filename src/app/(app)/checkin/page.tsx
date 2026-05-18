@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient, isDemoMode } from "@/lib/supabase/client";
-import { checkins as mockCheckins, alunos as mockAlunos } from "@/lib/mock-data";
+import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { formatarDataHora } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
@@ -25,6 +24,9 @@ export default function CheckInPage() {
   const [mensagem, setMensagem] = useState("");
   const [modalidadeSel, setModalidadeSel] = useState<string>("");
   const [historico, setHistorico] = useState<any[]>([]);
+  const [filtroModalidade, setFiltroModalidade] = useState<string>("todas");
+  const [filtroValidado, setFiltroValidado] = useState<"todos" | "validado" | "pendente">("todos");
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
     if (!modalidadeSel && modalidadesAtivas.length > 0) {
@@ -32,31 +34,33 @@ export default function CheckInPage() {
     }
   }, [modalidadesAtivas, modalidadeSel]);
 
-  useEffect(() => {
-    async function fetchHistorico() {
-      try {
-        if (isDemoMode) throw new Error("demo");
-        const supabase = createClient();
-        const { data, error } = await supabase
-          .from("checkins")
-          .select("*, alunos!inner(id, perfis!inner(nome))")
-          .order("data_hora_entrada", { ascending: false })
-          .limit(20);
-        if (error) throw error;
-        setHistorico(data || []);
-      } catch {
-        setHistorico(
-          mockCheckins.map((c) => ({
-            ...c,
-            data_hora_entrada: c.dataHoraEntrada,
-            data_hora_saida: c.dataHoraSaida,
-            alunos: { perfis: { nome: mockAlunos.find((a) => a.id === c.alunoId)?.nome } },
-          }))
-        );
+  const fetchHistorico = useCallback(async () => {
+    try {
+      const supabase = createClient();
+      let query = supabase
+        .from("checkins")
+        .select("*, alunos!inner(id, perfis!inner(nome))")
+        .order("data_hora_entrada", { ascending: false })
+        .limit(100);
+
+      if (filtroModalidade !== "todas") {
+        query = query.eq("modalidade", filtroModalidade);
       }
+      if (filtroValidado === "validado") {
+        query = query.eq("validado", true);
+      } else if (filtroValidado === "pendente") {
+        query = query.eq("validado", false);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setHistorico(data || []);
+    } catch {
+      setHistorico([]);
     }
-    fetchHistorico();
-  }, [status]);
+  }, [filtroModalidade, filtroValidado]);
+
+  useEffect(() => { fetchHistorico(); }, [fetchHistorico, status]);
 
   async function fazerCheckIn() {
     setStatus("loading");
@@ -89,7 +93,7 @@ export default function CheckInPage() {
             if (error) throw error;
           }
         } catch {
-          // Mock mode
+          // ignore
         }
 
         if (validado) {
@@ -115,15 +119,41 @@ export default function CheckInPage() {
         .from("checkins")
         .update({ data_hora_saida: new Date().toISOString() })
         .eq("id", checkinId);
-    } catch {
-      // mock
-    }
+    } catch { /* */ }
     setHistorico((prev) =>
       prev.map((c) =>
         c.id === checkinId ? { ...c, data_hora_saida: new Date().toISOString() } : c
       )
     );
   }
+
+  async function validarCheckin(checkinId: string) {
+    try {
+      const supabase = createClient();
+      await supabase.from("checkins").update({ validado: true }).eq("id", checkinId);
+      setHistorico((prev) => prev.map((c) => (c.id === checkinId ? { ...c, validado: true } : c)));
+    } catch { /* */ }
+  }
+
+  async function excluirCheckin(checkinId: string) {
+    if (!confirm("Excluir este check-in?")) return;
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from("checkins").delete().eq("id", checkinId);
+      if (error) {
+        alert("Erro: " + error.message);
+        return;
+      }
+      setHistorico((prev) => prev.filter((c) => c.id !== checkinId));
+    } catch (err: any) {
+      alert("Erro: " + err.message);
+    }
+  }
+
+  const historicoFiltrado = historico.filter((c) => {
+    if (!busca) return true;
+    return (c.alunos?.perfis?.nome || "").toLowerCase().includes(busca.toLowerCase());
+  });
 
   return (
     <div className="space-y-6">
@@ -173,40 +203,107 @@ export default function CheckInPage() {
         )}
       </div>
 
+      {/* Filtros */}
+      <div className="space-y-2">
+        <input
+          type="text"
+          placeholder="Buscar por nome do aluno..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="w-full px-4 py-2.5 rounded-lg bg-dark-light border border-gray-700 text-white text-sm focus:border-gold focus:outline-none"
+        />
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          <button
+            onClick={() => setFiltroModalidade("todas")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              filtroModalidade === "todas" ? "bg-gold text-black" : "bg-dark-light text-gray-400"
+            }`}
+          >
+            Todas
+          </button>
+          {modalidadesAtivas.map((mod) => (
+            <button
+              key={mod.slug}
+              onClick={() => setFiltroModalidade(mod.slug)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                filtroModalidade === mod.slug ? "bg-gold text-black" : "bg-dark-light text-gray-400"
+              }`}
+            >
+              {mod.nome}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          {(["todos", "validado", "pendente"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFiltroValidado(f)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                filtroValidado === f ? "bg-gold text-black" : "bg-dark-light text-gray-400"
+              }`}
+            >
+              {f === "todos" ? "Todos" : f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Historico */}
       <section>
         <h2 className="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">
-          Historico de Check-ins
+          Historico de Check-ins ({historicoFiltrado.length})
         </h2>
         <div className="space-y-2">
-          {historico.map((ci: any) => (
-            <div key={ci.id} className="bg-dark-light rounded-lg p-3 flex items-center justify-between">
-              <div>
-                <p className="font-medium text-sm">{ci.alunos?.perfis?.nome}</p>
-                <p className="text-xs text-gray-400">
-                  {byMap[ci.modalidade]?.nome ?? ci.modalidade} - {formatarDataHora(ci.data_hora_entrada || ci.dataHoraEntrada)}
-                </p>
-              </div>
-              <div className="text-right space-y-1">
-                <StatusBadge
-                  label={ci.validado ? "Validado" : "Pendente"}
-                  colorClass={ci.validado ? "bg-success text-white" : "bg-warning text-black"}
-                />
-                {(ci.data_hora_saida || ci.dataHoraSaida) ? (
-                  <p className="text-xs text-gray-500">
-                    Saida: {new Date(ci.data_hora_saida || ci.dataHoraSaida).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                ) : (
-                  <button
-                    onClick={() => fazerCheckout(ci.id)}
-                    className="text-xs text-gold underline"
-                  >
-                    Check-out
-                  </button>
-                )}
-              </div>
+          {historicoFiltrado.length === 0 ? (
+            <div className="bg-dark-light rounded-lg p-6 text-center">
+              <p className="text-gray-500 text-sm">Nenhum check-in encontrado.</p>
             </div>
-          ))}
+          ) : (
+            historicoFiltrado.map((ci: any) => (
+              <div key={ci.id} className="bg-dark-light rounded-lg p-3 flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm">{ci.alunos?.perfis?.nome}</p>
+                  <p className="text-xs text-gray-400">
+                    {byMap[ci.modalidade]?.nome ?? ci.modalidade} - {formatarDataHora(ci.data_hora_entrada)}
+                  </p>
+                </div>
+                <div className="text-right space-y-1 flex flex-col items-end">
+                  <StatusBadge
+                    label={ci.validado ? "Validado" : "Pendente"}
+                    colorClass={ci.validado ? "bg-success text-white" : "bg-warning text-black"}
+                  />
+                  <div className="flex items-center gap-2">
+                    {!ci.validado && (
+                      <button
+                        onClick={() => validarCheckin(ci.id)}
+                        className="text-xs text-success underline"
+                      >
+                        Validar
+                      </button>
+                    )}
+                    {ci.data_hora_saida ? (
+                      <p className="text-xs text-gray-500">
+                        Saida: {new Date(ci.data_hora_saida).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                    ) : (
+                      <button
+                        onClick={() => fazerCheckout(ci.id)}
+                        className="text-xs text-gold underline"
+                      >
+                        Check-out
+                      </button>
+                    )}
+                    <button
+                      onClick={() => excluirCheckin(ci.id)}
+                      className="text-xs text-danger underline"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </section>
     </div>
