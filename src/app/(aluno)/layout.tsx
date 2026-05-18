@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ModalidadesProvider } from "@/lib/modalidades/ModalidadesProvider";
+import PwaUpdater from "@/components/PwaUpdater";
 
 export default function AlunoLayout({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(console.error);
-    }
-  }, []);
-
   return (
     <ModalidadesProvider>
       <div className="min-h-screen bg-dark max-w-lg mx-auto relative">
@@ -28,6 +22,7 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
         </header>
         <main className="pb-20 px-4 py-4">{children}</main>
         <AlunoBottomNav />
+        <PwaUpdater />
       </div>
     </ModalidadesProvider>
   );

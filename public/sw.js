@@ -1,20 +1,24 @@
 // Service Worker para Gold Lion Academy PWA
+// Versione o cache a cada deploy importante para forcar atualizacao no cliente.
+const CACHE_NAME = "gold-lion-v2";
 
-const CACHE_NAME = "gold-lion-v1";
-const OFFLINE_URL = "/offline.html";
-
-// Arquivos para cache
-const PRECACHE_URLS = ["/", "/dashboard", "/alunos", "/financeiro", "/checkin", "/comunicacao"];
+// Arquivos estaticos para precache (so o root e offline; paginas dinamicas nao)
+const PRECACHE_URLS = ["/", "/offline.html"];
 
 // Install
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME).then((cache) =>
+      // addAll falha tudo se 1 falhar; usar add individual para tolerar 404
+      Promise.all(
+        PRECACHE_URLS.map((url) => cache.add(url).catch(() => null))
+      )
+    )
   );
-  self.skipWaiting();
+  // NAO chama skipWaiting automatico aqui: deixamos o usuario aprovar via banner.
 });
 
-// Activate
+// Activate - limpa caches antigos
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -28,14 +32,26 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Listener para troca rapida quando o usuario clica em "Atualizar"
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 // Fetch - Network first, fallback to cache
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  // Nunca cachear chamadas de API (/api/*) e do supabase
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith("/api/") || url.hostname.includes("supabase")) {
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses
         if (response.ok) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
