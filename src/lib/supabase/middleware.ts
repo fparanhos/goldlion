@@ -4,6 +4,13 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  // Bypass para assets estaticos publicos (defensive: o matcher ja deveria excluir,
+  // mas garante que nenhum SVG/imagem caia no fluxo de redirect de auth)
+  const path = request.nextUrl.pathname;
+  if (/\.(svg|png|jpe?g|webp|gif|ico|webmanifest|json|txt)$/i.test(path)) {
+    return supabaseResponse;
+  }
+
   // Modo demo: Supabase nao configurado, liberar acesso
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   if (!supabaseUrl || supabaseUrl.includes("SEU-PROJETO")) {
