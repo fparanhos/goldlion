@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1180" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif">
+  <!-- Background -->
+  <rect width="900" height="1180" fill="#0A0A0A"/>
+
+  <!-- Header -->
+  <g>
+    <!-- Logo placeholder (circulo dourado com leao estilizado) -->
+    <circle cx="450" cy="80" r="44" fill="#D4A017" stroke="#FFD700" stroke-width="3"/>
+    <text x="450" y="98" font-size="44" font-weight="900" text-anchor="middle" fill="#0A0A0A">G</text>
+
+    <text x="450" y="170" font-size="36" font-weight="900" text-anchor="middle" fill="#D4A017" letter-spacing="2">GOLD LION ACADEMY</text>
+    <text x="450" y="210" font-size="24" font-weight="700" text-anchor="middle" fill="#FFFFFF">Como instalar o aplicativo no seu celular</text>
+    <text x="450" y="240" font-size="16" text-anchor="middle" fill="#9CA3AF">Acesso rapido, funciona offline e recebe avisos importantes</text>
+  </g>
+
+  <!-- Divisor -->
+  <line x1="80" y1="280" x2="820" y2="280" stroke="#374151" stroke-width="2"/>
+
+  <!-- ===== COLUNA ANDROID ===== -->
+  <g>
+    <!-- Card -->
+    <rect x="40" y="310" width="400" height="780" rx="20" fill="#1A1A2E" stroke="#374151" stroke-width="1"/>
+
+    <!-- Badge Android -->
+    <rect x="60" y="330" width="120" height="32" rx="16" fill="#3DDC84"/>
+    <text x="120" y="352" font-size="14" font-weight="700" text-anchor="middle" fill="#0A0A0A">ANDROID</text>
+    <text x="200" y="352" font-size="14" fill="#9CA3AF">(Chrome)</text>
+
+    <!-- Passo 1 -->
+    <g transform="translate(60, 390)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">1</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Abra o site no Chrome</text>
+      <text x="56" y="40" font-size="14" fill="#9CA3AF">Digite na barra: gold-lion.vercel.app</text>
+    </g>
+
+    <!-- Passo 2 -->
+    <g transform="translate(60, 480)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">2</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Toque nos 3 pontinhos</text>
+      <text x="56" y="40" font-size="14" fill="#9CA3AF">No canto superior direito do Chrome</text>
+
+      <!-- Icone 3 pontos verticais -->
+      <g transform="translate(290, 4)">
+        <rect x="0" y="0" width="60" height="60" rx="8" fill="#0A0A0A" stroke="#D4A017" stroke-width="2"/>
+        <circle cx="30" cy="15" r="3.5" fill="#FFFFFF"/>
+        <circle cx="30" cy="30" r="3.5" fill="#FFFFFF"/>
+        <circle cx="30" cy="45" r="3.5" fill="#FFFFFF"/>
+      </g>
+    </g>
+
+    <!-- Passo 3 -->
+    <g transform="translate(60, 580)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">3</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Toque em &quot;Instalar app&quot;</text>
+      <text x="56" y="40" font-size="14" fill="#9CA3AF">Ou &quot;Adicionar a tela inicial&quot;</text>
+
+      <!-- Menu mockup -->
+      <g transform="translate(56, 60)">
+        <rect x="0" y="0" width="280" height="120" rx="10" fill="#0A0A0A" stroke="#374151" stroke-width="1"/>
+        <text x="14" y="26" font-size="12" fill="#9CA3AF">Nova aba</text>
+        <line x1="0" y1="40" x2="280" y2="40" stroke="#1F2937"/>
+        <text x="14" y="60" font-size="12" fill="#9CA3AF">Favoritos</text>
+        <line x1="0" y1="74" x2="280" y2="74" stroke="#1F2937"/>
+        <rect x="4" y="80" width="272" height="32" rx="6" fill="#D4A017" opacity="0.18"/>
+        <text x="14" y="100" font-size="13" font-weight="700" fill="#D4A017">Instalar app</text>
+        <text x="265" y="100" font-size="14" font-weight="900" fill="#D4A017">›</text>
+      </g>
+    </g>
+
+    <!-- Passo 4 -->
+    <g transform="translate(60, 800)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">4</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Toque em &quot;Instalar&quot; e confirme</text>
+      <text x="56" y="40" font-size="14" fill="#9CA3AF">O icone aparece na sua tela inicial</text>
+    </g>
+
+    <!-- Dica final Android -->
+    <g transform="translate(60, 900)">
+      <rect x="0" y="0" width="360" height="160" rx="12" fill="#D4A017" opacity="0.12"/>
+      <rect x="0" y="0" width="360" height="160" rx="12" fill="none" stroke="#D4A017" stroke-width="1.5"/>
+
+      <!-- Icone phone -->
+      <g transform="translate(20, 20)">
+        <rect x="0" y="0" width="50" height="80" rx="8" fill="#0A0A0A" stroke="#D4A017" stroke-width="2"/>
+        <rect x="6" y="10" width="38" height="58" rx="2" fill="#1A1A2E"/>
+        <circle cx="25" cy="40" r="12" fill="#D4A017"/>
+        <text x="25" y="46" font-size="14" font-weight="900" text-anchor="middle" fill="#0A0A0A">G</text>
+      </g>
+
+      <text x="90" y="40" font-size="14" font-weight="700" fill="#D4A017">DICA</text>
+      <text x="90" y="65" font-size="13" fill="#FFFFFF">Pode aparecer um banner</text>
+      <text x="90" y="83" font-size="13" fill="#FFFFFF">&quot;Adicionar Gold Lion a tela&quot; -</text>
+      <text x="90" y="101" font-size="13" fill="#FFFFFF">e so tocar nele que instala</text>
+      <text x="90" y="119" font-size="13" fill="#FFFFFF">direto, pulando todos os passos.</text>
+    </g>
+  </g>
+
+  <!-- ===== COLUNA IOS ===== -->
+  <g>
+    <!-- Card -->
+    <rect x="460" y="310" width="400" height="780" rx="20" fill="#1A1A2E" stroke="#374151" stroke-width="1"/>
+
+    <!-- Badge iOS -->
+    <rect x="480" y="330" width="120" height="32" rx="16" fill="#FFFFFF"/>
+    <text x="540" y="352" font-size="14" font-weight="700" text-anchor="middle" fill="#0A0A0A">iPHONE / iPAD</text>
+    <text x="620" y="352" font-size="14" fill="#9CA3AF">(Safari)</text>
+
+    <!-- Passo 1 -->
+    <g transform="translate(480, 390)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">1</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Abra o site no Safari</text>
+      <text x="56" y="40" font-size="14" fill="#9CA3AF">Use o Safari, nao o Chrome do iPhone</text>
+    </g>
+
+    <!-- Passo 2 -->
+    <g transform="translate(480, 480)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">2</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Toque em Compartilhar</text>
+      <text x="56" y="40" font-size="14" fill="#9CA3AF">Botao na barra inferior do Safari</text>
+
+      <!-- Icone share iOS (quadrado com seta pra cima) -->
+      <g transform="translate(290, 4)">
+        <rect x="0" y="0" width="60" height="60" rx="8" fill="#0A0A0A" stroke="#D4A017" stroke-width="2"/>
+        <!-- Caixa -->
+        <rect x="16" y="28" width="28" height="22" rx="3" fill="none" stroke="#FFFFFF" stroke-width="2.5"/>
+        <!-- Seta pra cima -->
+        <line x1="30" y1="38" x2="30" y2="12" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"/>
+        <polyline points="22,20 30,12 38,20" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+    </g>
+
+    <!-- Passo 3 -->
+    <g transform="translate(480, 580)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">3</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Role e toque em</text>
+      <text x="56" y="40" font-size="16" font-weight="700" fill="#FFFFFF">&quot;Adicionar a Tela de Inicio&quot;</text>
+
+      <!-- Menu mockup iOS -->
+      <g transform="translate(56, 60)">
+        <rect x="0" y="0" width="280" height="120" rx="14" fill="#0A0A0A" stroke="#374151" stroke-width="1"/>
+        <text x="14" y="26" font-size="12" fill="#9CA3AF">Copiar</text>
+        <text x="265" y="26" font-size="14" text-anchor="end" fill="#9CA3AF">⎘</text>
+        <line x1="0" y1="40" x2="280" y2="40" stroke="#1F2937"/>
+        <text x="14" y="60" font-size="12" fill="#9CA3AF">Adicionar aos Favoritos</text>
+        <line x1="0" y1="74" x2="280" y2="74" stroke="#1F2937"/>
+        <rect x="4" y="80" width="272" height="32" rx="6" fill="#D4A017" opacity="0.18"/>
+        <text x="14" y="100" font-size="13" font-weight="700" fill="#D4A017">Adicionar a Tela de Inicio</text>
+        <text x="265" y="100" font-size="14" font-weight="900" text-anchor="end" fill="#D4A017">+</text>
+      </g>
+    </g>
+
+    <!-- Passo 4 -->
+    <g transform="translate(480, 800)">
+      <circle cx="20" cy="20" r="18" fill="#D4A017"/>
+      <text x="20" y="27" font-size="20" font-weight="900" text-anchor="middle" fill="#0A0A0A">4</text>
+      <text x="56" y="18" font-size="16" font-weight="700" fill="#FFFFFF">Toque em &quot;Adicionar&quot;</text>
+      <text x="56" y="40" font-size="14" fill="#9CA3AF">No canto superior direito da tela</text>
+    </g>
+
+    <!-- Dica iOS -->
+    <g transform="translate(480, 900)">
+      <rect x="0" y="0" width="360" height="160" rx="12" fill="#D4A017" opacity="0.12"/>
+      <rect x="0" y="0" width="360" height="160" rx="12" fill="none" stroke="#D4A017" stroke-width="1.5"/>
+
+      <g transform="translate(20, 20)">
+        <rect x="0" y="0" width="50" height="80" rx="10" fill="#0A0A0A" stroke="#D4A017" stroke-width="2"/>
+        <rect x="6" y="10" width="38" height="58" rx="2" fill="#1A1A2E"/>
+        <rect x="22" y="72" width="6" height="4" rx="1" fill="#D4A017"/>
+        <circle cx="25" cy="40" r="12" fill="#D4A017"/>
+        <text x="25" y="46" font-size="14" font-weight="900" text-anchor="middle" fill="#0A0A0A">G</text>
+      </g>
+
+      <text x="90" y="40" font-size="14" font-weight="700" fill="#D4A017">IMPORTANTE</text>
+      <text x="90" y="65" font-size="13" fill="#FFFFFF">No iPhone, USE SAFARI.</text>
+      <text x="90" y="83" font-size="13" fill="#FFFFFF">O botao &quot;Adicionar a tela&quot; nao</text>
+      <text x="90" y="101" font-size="13" fill="#FFFFFF">aparece no Chrome do iPhone -</text>
+      <text x="90" y="119" font-size="13" fill="#FFFFFF">e limitacao da Apple.</text>
+    </g>
+  </g>
+
+  <!-- ===== FOOTER ===== -->
+  <line x1="80" y1="1110" x2="820" y2="1110" stroke="#374151" stroke-width="2"/>
+  <g transform="translate(0, 1120)">
+    <text x="450" y="22" font-size="14" font-weight="700" text-anchor="middle" fill="#D4A017">Pronto! Agora abra o app pelo icone na tela inicial.</text>
+    <text x="450" y="46" font-size="12" text-anchor="middle" fill="#9CA3AF">Duvidas? Fale com a recepcao da Gold Lion Academy.</text>
+  </g>
+</svg>
