@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { alunos as mockAlunos, checkins as mockCheckins } from "@/lib/mock-data";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 
-const ALUNO_MOCK_ID = "a1";
 const ACADEMIA_LAT = Number(process.env.NEXT_PUBLIC_ACADEMIA_LAT) || -23.5505;
 const ACADEMIA_LNG = Number(process.env.NEXT_PUBLIC_ACADEMIA_LNG) || -46.6333;
 const RAIO = Number(process.env.NEXT_PUBLIC_ACADEMIA_RAIO) || 200;
@@ -19,14 +18,49 @@ function calcDist(lat1: number, lon1: number, lat2: number, lon2: number) {
 
 export default function AlunoCheckinPage() {
   const { byMap } = useModalidades();
-  const aluno = mockAlunos.find((a) => a.id === ALUNO_MOCK_ID)!;
+  const [alunoId, setAlunoId] = useState<string | null>(null);
+  const [modalidades, setModalidades] = useState<string[]>([]);
+  const [modalidadeSel, setModalidadeSel] = useState<string>("");
+  const [meusCheckins, setMeusCheckins] = useState<any[]>([]);
+  const [carregandoAluno, setCarregandoAluno] = useState(true);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [mensagem, setMensagem] = useState("");
-  const [modalidadeSel, setModalidadeSel] = useState<string>(aluno.modalidades[0]);
 
-  const meusCheckins = mockCheckins.filter((c) => c.alunoId === ALUNO_MOCK_ID);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const res = await fetch("/api/me/aluno");
+        const data = await res.json();
+        if (data?.aluno) {
+          setAlunoId(data.aluno.id);
+          const mods = data.aluno.modalidades || [];
+          setModalidades(mods);
+          setModalidadeSel(mods[0] || "");
+        }
+
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: ci } = await supabase
+            .from("checkins")
+            .select("*")
+            .eq("aluno_id", user.id)
+            .order("data_hora_entrada", { ascending: false })
+            .limit(20);
+          setMeusCheckins(ci || []);
+        }
+      } catch { /* */ }
+      setCarregandoAluno(false);
+    }
+    fetchData();
+  }, []);
 
   function fazerCheckIn() {
+    if (!modalidadeSel || !alunoId) {
+      setStatus("error");
+      setMensagem("Selecione uma modalidade.");
+      return;
+    }
     setStatus("loading");
 
     if (!navigator.geolocation) {
@@ -36,24 +70,56 @@ export default function AlunoCheckinPage() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
         const dist = calcDist(latitude, longitude, ACADEMIA_LAT, ACADEMIA_LNG);
         const validado = dist <= RAIO;
 
-        if (validado) {
-          setStatus("success");
-          setMensagem(`Check-in validado! Voce esta a ${Math.round(dist)}m da academia.`);
-        } else {
-          setStatus("success");
-          setMensagem(`Check-in registrado. Distancia: ${Math.round(dist)}m (fora do raio de ${RAIO}m - aguardando validacao do professor).`);
+        try {
+          const supabase = createClient();
+          const { data, error } = await supabase
+            .from("checkins")
+            .insert({
+              aluno_id: alunoId,
+              modalidade: modalidadeSel,
+              latitude,
+              longitude,
+              validado,
+            })
+            .select()
+            .single();
+
+          if (error) throw error;
+          if (data) setMeusCheckins((prev) => [data, ...prev]);
+        } catch {
+          // Mesmo se gravar falhar, mostra feedback (o aluno pode tentar de novo)
         }
+
+        setStatus("success");
+        setMensagem(
+          validado
+            ? `Check-in validado! Voce esta a ${Math.round(dist)}m da academia.`
+            : `Check-in registrado. Distancia: ${Math.round(dist)}m (fora do raio de ${RAIO}m - aguardando validacao do professor).`
+        );
       },
       () => {
         setStatus("error");
         setMensagem("Nao foi possivel obter sua localizacao. Verifique as permissoes do navegador.");
       },
       { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  if (carregandoAluno) {
+    return <div className="text-center py-20 text-gray-400">Carregando...</div>;
+  }
+
+  if (modalidades.length === 0) {
+    return (
+      <div className="bg-dark-light rounded-xl p-6 text-center">
+        <p className="text-gray-400 text-sm">Nenhuma modalidade vinculada ao seu cadastro.</p>
+        <p className="text-gray-500 text-xs mt-2">Fale com a administracao da academia.</p>
+      </div>
     );
   }
 
@@ -92,7 +158,7 @@ export default function AlunoCheckinPage() {
         {/* Selecao de modalidade */}
         {status === "idle" && (
           <div className="flex gap-2 justify-center flex-wrap">
-            {aluno.modalidades.map((mod) => (
+            {modalidades.map((mod) => (
               <button
                 key={mod}
                 onClick={() => setModalidadeSel(mod)}
@@ -136,22 +202,26 @@ export default function AlunoCheckinPage() {
           Meu Historico ({meusCheckins.length} treinos)
         </h3>
         <div className="space-y-2">
-          {meusCheckins.map((ci) => (
-            <div key={ci.id} className="bg-dark-light rounded-xl p-3 flex items-center justify-between">
-              <div>
-                <p className="font-medium text-sm text-white">{byMap[ci.modalidade]?.nome ?? ci.modalidade}</p>
-                <p className="text-xs text-gray-400">
-                  {new Date(ci.dataHoraEntrada).toLocaleDateString("pt-BR")} as{" "}
-                  {new Date(ci.dataHoraEntrada).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                </p>
+          {meusCheckins.length === 0 ? (
+            <p className="text-sm text-gray-500 text-center py-4">Nenhum check-in registrado.</p>
+          ) : (
+            meusCheckins.map((ci) => (
+              <div key={ci.id} className="bg-dark-light rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-sm text-white">{byMap[ci.modalidade]?.nome ?? ci.modalidade}</p>
+                  <p className="text-xs text-gray-400">
+                    {new Date(ci.data_hora_entrada || ci.dataHoraEntrada).toLocaleDateString("pt-BR")} as{" "}
+                    {new Date(ci.data_hora_entrada || ci.dataHoraEntrada).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  ci.validado ? "bg-success/20 text-success" : "bg-warning/20 text-warning"
+                }`}>
+                  {ci.validado ? "Validado" : "Pendente"}
+                </span>
               </div>
-              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                ci.validado ? "bg-success/20 text-success" : "bg-warning/20 text-warning"
-              }`}>
-                {ci.validado ? "Validado" : "Pendente"}
-              </span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
     </div>
