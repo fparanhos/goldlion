@@ -160,6 +160,28 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
     setEditandoStatus(false);
   }
 
+  async function excluirAluno() {
+    const ok = confirm(
+      `EXCLUIR DEFINITIVAMENTE "${nome}"?\n\n` +
+      `Esta acao remove o aluno, seus pagamentos e check-ins do banco.\n` +
+      `Nao pode ser desfeita.\n\n` +
+      `Para apenas desativar, use o botao Desativar.`
+    );
+    if (!ok) return;
+
+    try {
+      const res = await fetch(`/api/alunos/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Erro: " + (data.error || "Falha ao excluir"));
+        return;
+      }
+      router.push("/alunos");
+    } catch (err: any) {
+      alert("Erro: " + err.message);
+    }
+  }
+
   if (loading) {
     return <div className="text-center py-20 text-gray-400">Carregando...</div>;
   }
@@ -423,12 +445,21 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
             >
               Alterar Status
             </button>
-            <button
-              onClick={() => { if (confirm("Desativar este aluno?")) alterarStatus("cancelado"); }}
-              className="py-3 rounded-lg border border-danger text-danger font-medium text-sm"
-            >
-              Desativar
-            </button>
+            {aluno.status === "cancelado" ? (
+              <button
+                onClick={() => { if (confirm(`Reativar "${nome}"?`)) alterarStatus("ativo"); }}
+                className="py-3 rounded-lg border border-success text-success font-medium text-sm"
+              >
+                Reativar
+              </button>
+            ) : (
+              <button
+                onClick={() => { if (confirm(`Desativar "${nome}"? O aluno fica inativo mas o cadastro e mantido.`)) alterarStatus("cancelado"); }}
+                className="py-3 rounded-lg border border-warning text-warning font-medium text-sm"
+              >
+                Desativar
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
@@ -472,6 +503,13 @@ export default function AlunoDetalhePage({ params }: { params: Promise<{ id: str
           className="w-full py-3 rounded-lg border border-warning text-warning font-medium text-sm"
         >
           Resetar Senha
+        </button>
+
+        <button
+          onClick={excluirAluno}
+          className="w-full py-3 rounded-lg bg-danger/20 border border-danger text-danger font-bold text-sm"
+        >
+          Excluir Aluno
         </button>
       </div>
     </div>

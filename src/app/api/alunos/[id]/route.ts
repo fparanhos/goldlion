@@ -149,3 +149,41 @@ export async function PUT(
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = getSupabase();
+
+  try {
+    // Garantir que e mesmo um aluno (evita deletar admin/professor por engano)
+    const { data: perfil, error: perfilErr } = await supabase
+      .from("perfis")
+      .select("perfil, nome")
+      .eq("id", id)
+      .single();
+
+    if (perfilErr || !perfil) {
+      return NextResponse.json({ error: "Aluno nao encontrado" }, { status: 404 });
+    }
+
+    if (perfil.perfil !== "aluno") {
+      return NextResponse.json(
+        { error: `Este usuario e ${perfil.perfil}, nao aluno. Use a tela correspondente.` },
+        { status: 400 }
+      );
+    }
+
+    // Deletar auth.users cascateia para perfis -> alunos -> pagamentos/checkins/mensagens/push
+    const { error: authErr } = await supabase.auth.admin.deleteUser(id);
+    if (authErr) {
+      return NextResponse.json({ error: "Erro ao remover usuario: " + authErr.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true, nome: perfil.nome });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
