@@ -101,13 +101,21 @@ export default function ProfessorDashboard() {
         )}
       </section>
 
-      {/* Botao Check-in */}
-      <Link
-        href="/professor/checkin"
-        className="block w-full py-4 rounded-xl bg-gold text-black font-bold text-lg text-center active:bg-gold-dark transition-colors"
-      >
-        Fazer Check-in
-      </Link>
+      {/* Acoes */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/professor/checkin"
+          className="py-4 rounded-xl bg-gold text-black font-bold text-center active:bg-gold-dark transition-colors"
+        >
+          Meu Check-in
+        </Link>
+        <Link
+          href="/professor/presenca"
+          className="py-4 rounded-xl border border-gold text-gold font-bold text-center"
+        >
+          Presenca de Aluno
+        </Link>
+      </div>
 
       {/* Check-ins dos alunos hoje */}
       <section>

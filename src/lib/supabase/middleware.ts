@@ -1,17 +1,38 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
+
+// Rotas exclusivas do admin
+const ROTAS_ADMIN = [
+  "/dashboard",
+  "/alunos",
+  "/aulas",
+  "/checkin",
+  "/comunicacao",
+  "/financeiro",
+  "/modalidades",
+  "/planos",
+  "/professores",
+];
+
+function ehRotaAdmin(path: string) {
+  return ROTAS_ADMIN.some((r) => path === r || path.startsWith(r + "/"));
+}
+
+function destinoPorPerfil(perfil: string | null) {
+  if (perfil === "professor") return "/professor";
+  if (perfil === "aluno") return "/aluno";
+  return "/dashboard";
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  // Bypass para assets estaticos publicos (defensive: o matcher ja deveria excluir,
-  // mas garante que nenhum SVG/imagem caia no fluxo de redirect de auth)
   const path = request.nextUrl.pathname;
   if (/\.(svg|png|jpe?g|webp|gif|ico|webmanifest|json|txt)$/i.test(path)) {
     return supabaseResponse;
   }
 
-  // Modo demo: Supabase nao configurado, liberar acesso
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   if (!supabaseUrl || supabaseUrl.includes("SEU-PROJETO")) {
     return supabaseResponse;
@@ -42,27 +63,85 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redireciona para login se nao autenticado (exceto pagina de login, callback e API)
+  // Nao autenticado: deixa passar so rotas publicas
+  if (!user) {
+    if (
+      !path.startsWith("/login") &&
+      !path.startsWith("/auth") &&
+      !path.startsWith("/api/") &&
+      !path.startsWith("/cadastro") &&
+      !path.startsWith("/recuperar-senha") &&
+      !path.startsWith("/redefinir-senha") &&
+      !path.startsWith("/trocar-senha") &&
+      path !== "/"
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // Autenticado: bloquear acesso a rotas que nao sao do perfil dele.
+  // Pular API e rotas neutras (trocar-senha, callbacks, root, etc).
   if (
-    !user &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/api/") &&
-    !request.nextUrl.pathname.startsWith("/aluno") &&
-    !request.nextUrl.pathname.startsWith("/professor") &&
-    !request.nextUrl.pathname.startsWith("/cadastro") &&
-    !request.nextUrl.pathname.startsWith("/recuperar-senha") &&
-    !request.nextUrl.pathname.startsWith("/redefinir-senha") &&
-    !request.nextUrl.pathname.startsWith("/trocar-senha") &&
-    request.nextUrl.pathname !== "/"
+    path.startsWith("/api/") ||
+    path === "/" ||
+    path.startsWith("/trocar-senha") ||
+    path.startsWith("/redefinir-senha") ||
+    path.startsWith("/recuperar-senha") ||
+    path.startsWith("/auth")
   ) {
+    return supabaseResponse;
+  }
+
+  // Buscar perfil via service role (RLS-bypass) so se a rota for sensivel
+  const ehAdmin = ehRotaAdmin(path);
+  const ehAreaProfessor = path === "/professor" || path.startsWith("/professor/");
+  const ehAreaAluno = path === "/aluno" || path.startsWith("/aluno/");
+
+  if (!ehAdmin && !ehAreaProfessor && !ehAreaAluno) {
+    return supabaseResponse;
+  }
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) {
+    // Sem service role nao da pra checar perfil sem RLS; deixa passar
+    return supabaseResponse;
+  }
+
+  const admin = createClient(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: perfilRow } = await admin
+    .from("perfis")
+    .select("perfil")
+    .eq("id", user.id)
+    .single();
+
+  const perfil = (perfilRow?.perfil as string | null) ?? null;
+
+  // Rotas admin: so admin entra
+  if (ehAdmin && perfil !== "admin") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = destinoPorPerfil(perfil);
     return NextResponse.redirect(url);
   }
 
-  // Se ja autenticado e na pagina de login, nao redirecionar automaticamente
-  // O login page ja faz o redirect baseado no perfil
+  // Area do professor: so professor (admin pode passar tb pra suporte)
+  if (ehAreaProfessor && perfil !== "professor" && perfil !== "admin") {
+    const url = request.nextUrl.clone();
+    url.pathname = destinoPorPerfil(perfil);
+    return NextResponse.redirect(url);
+  }
+
+  // Area do aluno: so aluno (admin pode passar tb pra suporte)
+  if (ehAreaAluno && perfil !== "aluno" && perfil !== "admin") {
+    const url = request.nextUrl.clone();
+    url.pathname = destinoPorPerfil(perfil);
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }
