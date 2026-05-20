@@ -103,6 +103,25 @@ export default function ProfessoresPage() {
     setFormLoading(false);
   }
 
+  async function aprovarProfessor(prof: any) {
+    if (!confirm(`Aprovar "${prof.nome}" como professor?`)) return;
+    try {
+      const res = await fetch("/api/professores", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: prof.id, status: "ativo" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Erro: " + (data.error || "Falha ao aprovar"));
+        return;
+      }
+      fetchProfessores();
+    } catch (err: any) {
+      alert("Erro: " + err.message);
+    }
+  }
+
   async function excluirProfessor(prof: any) {
     const totalAulas = (prof.aulas || []).length;
 
@@ -232,18 +251,42 @@ export default function ProfessoresPage() {
       )}
 
       <div className="space-y-3">
-        {professores.map((prof: any) => (
-          <div key={prof.id} className="bg-dark-light rounded-xl p-4 space-y-3">
+        {professores.map((prof: any) => {
+          const pendente = prof.status === "pendente";
+          return (
+          <div
+            key={prof.id}
+            className={`rounded-xl p-4 space-y-3 ${
+              pendente
+                ? "bg-warning/10 border border-warning/40"
+                : "bg-dark-light"
+            }`}
+          >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-gold-dark flex items-center justify-center text-sm font-bold text-white">
                 {prof.nome.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
               </div>
               <div className="flex-1">
-                <p className="font-medium text-white">{prof.nome}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-white">{prof.nome}</p>
+                  {pendente && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-warning/20 text-warning uppercase">
+                      Pendente
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-400">{prof.email}</p>
                 {prof.telefone && <p className="text-xs text-gray-400">{prof.telefone}</p>}
               </div>
               <div className="flex gap-2">
+                {pendente && (
+                  <button
+                    onClick={() => aprovarProfessor(prof)}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-success/20 text-success border border-success/40 font-medium"
+                  >
+                    Aprovar
+                  </button>
+                )}
                 <button
                   onClick={() => iniciarEdicao(prof)}
                   className="px-3 py-1.5 rounded-lg text-xs bg-dark text-gold border border-gold/30"
@@ -254,7 +297,7 @@ export default function ProfessoresPage() {
                   onClick={() => excluirProfessor(prof)}
                   className="px-3 py-1.5 rounded-lg text-xs bg-dark text-danger border border-danger/30"
                 >
-                  Excluir
+                  {pendente ? "Rejeitar" : "Excluir"}
                 </button>
               </div>
             </div>
@@ -281,7 +324,8 @@ export default function ProfessoresPage() {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

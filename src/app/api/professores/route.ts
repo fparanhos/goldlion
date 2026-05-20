@@ -83,13 +83,16 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, nome, telefone, modalidades } = body;
+    const { id, nome, telefone, status } = body;
 
     if (!id) return NextResponse.json({ error: "ID obrigatorio" }, { status: 400 });
 
     const updates: any = {};
     if (nome) updates.nome = nome;
     if (telefone !== undefined) updates.telefone = telefone;
+    if (status && ["pendente", "ativo", "inativo"].includes(status)) {
+      updates.status = status;
+    }
 
     if (Object.keys(updates).length > 0) {
       const { error } = await supabase.from("perfis").update(updates).eq("id", id);

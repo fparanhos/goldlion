@@ -10,6 +10,7 @@ interface ModalidadeOpcao {
 }
 
 export default function CadastroPage() {
+  const [tipo, setTipo] = useState<"aluno" | "professor">("aluno");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
   const [sucesso, setSucesso] = useState(false);
@@ -57,8 +58,13 @@ export default function CadastroPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!form.nome || !form.email || !form.senha || !form.telefone || form.modalidades.length === 0) {
-      setErro("Preencha nome, email, senha, telefone e selecione ao menos uma modalidade");
+    if (!form.nome || !form.email || !form.senha || !form.telefone) {
+      setErro("Preencha nome, email, senha e telefone");
+      return;
+    }
+
+    if (tipo === "aluno" && form.modalidades.length === 0) {
+      setErro("Selecione ao menos uma modalidade");
       return;
     }
 
@@ -84,13 +90,14 @@ export default function CadastroPage() {
           email: form.email,
           senha: form.senha,
           telefone: form.telefone,
-          cpf: form.cpf,
-          dataNascimento: form.dataNascimento,
-          contatoEmergencia: form.contatoEmergencia,
-          telefoneEmergencia: form.telefoneEmergencia,
-          modalidades: form.modalidades,
-          planoId: form.planoId,
+          cpf: tipo === "aluno" ? form.cpf : undefined,
+          dataNascimento: tipo === "aluno" ? form.dataNascimento : undefined,
+          contatoEmergencia: tipo === "aluno" ? form.contatoEmergencia : undefined,
+          telefoneEmergencia: tipo === "aluno" ? form.telefoneEmergencia : undefined,
+          modalidades: tipo === "aluno" ? form.modalidades : undefined,
+          planoId: tipo === "aluno" ? form.planoId : undefined,
           autoCadastro: true,
+          tipoCadastro: tipo,
         }),
       });
 
@@ -120,8 +127,9 @@ export default function CadastroPage() {
           </div>
           <h2 className="text-xl font-bold text-white">Cadastro enviado!</h2>
           <p className="text-gray-400 text-sm">
-            Seu cadastro foi recebido e esta aguardando a aprovacao de um professor.
-            Voce recebera acesso assim que for aprovado.
+            {tipo === "professor"
+              ? "Seu cadastro de professor foi recebido e esta aguardando a aprovacao de um administrador. Voce recebera acesso assim que for aprovado."
+              : "Seu cadastro foi recebido e esta aguardando a aprovacao de um professor. Voce recebera acesso assim que for aprovado."}
           </p>
           <a
             href="/"
@@ -146,8 +154,31 @@ export default function CadastroPage() {
             height={80}
             className="mx-auto mb-3 rounded-full border-2 border-gold"
           />
-          <h1 className="text-2xl font-black text-gold">Novo Aluno</h1>
+          <h1 className="text-2xl font-black text-gold">
+            {tipo === "professor" ? "Novo Professor" : "Novo Aluno"}
+          </h1>
           <p className="text-gray-400 text-sm mt-1">Preencha seus dados para se cadastrar</p>
+        </div>
+
+        <div className="flex bg-dark-light rounded-lg p-1 mb-6">
+          <button
+            type="button"
+            onClick={() => setTipo("aluno")}
+            className={`flex-1 py-2 rounded text-sm font-medium transition-colors ${
+              tipo === "aluno" ? "bg-gold text-black" : "text-gray-400"
+            }`}
+          >
+            Sou aluno
+          </button>
+          <button
+            type="button"
+            onClick={() => setTipo("professor")}
+            className={`flex-1 py-2 rounded text-sm font-medium transition-colors ${
+              tipo === "professor" ? "bg-gold text-black" : "text-gray-400"
+            }`}
+          >
+            Sou professor
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -198,7 +229,94 @@ export default function CadastroPage() {
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {tipo === "aluno" ? (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Telefone" required>
+                  <input
+                    type="tel"
+                    value={form.telefone}
+                    onChange={(e) => setForm({ ...form, telefone: e.target.value })}
+                    className="input-field"
+                    placeholder="(11) 99999-0000"
+                  />
+                </Field>
+                <Field label="CPF">
+                  <input
+                    type="text"
+                    value={form.cpf}
+                    onChange={(e) => setForm({ ...form, cpf: e.target.value })}
+                    className="input-field"
+                    placeholder="000.000.000-00"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Data de Nascimento">
+                <input
+                  type="date"
+                  value={form.dataNascimento}
+                  onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
+                  className="input-field"
+                />
+              </Field>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Contato de Emergencia">
+                  <input
+                    type="text"
+                    value={form.contatoEmergencia}
+                    onChange={(e) => setForm({ ...form, contatoEmergencia: e.target.value })}
+                    className="input-field"
+                    placeholder="Nome"
+                  />
+                </Field>
+                <Field label="Tel. Emergencia">
+                  <input
+                    type="tel"
+                    value={form.telefoneEmergencia}
+                    onChange={(e) => setForm({ ...form, telefoneEmergencia: e.target.value })}
+                    className="input-field"
+                    placeholder="(11) 99999-0000"
+                  />
+                </Field>
+              </div>
+
+              <Field label="Modalidades" required>
+                <div className="flex gap-2 flex-wrap">
+                  {modalidadesDisponiveis.map((mod) => (
+                    <button
+                      key={mod.slug}
+                      type="button"
+                      onClick={() => toggleModalidade(mod.slug)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        form.modalidades.includes(mod.slug)
+                          ? "bg-gold text-black"
+                          : "bg-dark-light text-gray-400 border border-gray-700"
+                      }`}
+                    >
+                      {mod.nome}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              <Field label="Plano desejado">
+                <select
+                  value={form.planoId}
+                  onChange={(e) => setForm({ ...form, planoId: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">Selecione um plano</option>
+                  {planos.map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome} - R$ {Number(p.valor).toFixed(2)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </>
+          ) : (
             <Field label="Telefone" required>
               <input
                 type="tel"
@@ -208,80 +326,14 @@ export default function CadastroPage() {
                 placeholder="(11) 99999-0000"
               />
             </Field>
-            <Field label="CPF">
-              <input
-                type="text"
-                value={form.cpf}
-                onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                className="input-field"
-                placeholder="000.000.000-00"
-              />
-            </Field>
-          </div>
+          )}
 
-          <Field label="Data de Nascimento">
-            <input
-              type="date"
-              value={form.dataNascimento}
-              onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
-              className="input-field"
-            />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Contato de Emergencia">
-              <input
-                type="text"
-                value={form.contatoEmergencia}
-                onChange={(e) => setForm({ ...form, contatoEmergencia: e.target.value })}
-                className="input-field"
-                placeholder="Nome"
-              />
-            </Field>
-            <Field label="Tel. Emergencia">
-              <input
-                type="tel"
-                value={form.telefoneEmergencia}
-                onChange={(e) => setForm({ ...form, telefoneEmergencia: e.target.value })}
-                className="input-field"
-                placeholder="(11) 99999-0000"
-              />
-            </Field>
-          </div>
-
-          <Field label="Modalidades" required>
-            <div className="flex gap-2 flex-wrap">
-              {modalidadesDisponiveis.map((mod) => (
-                <button
-                  key={mod.slug}
-                  type="button"
-                  onClick={() => toggleModalidade(mod.slug)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    form.modalidades.includes(mod.slug)
-                      ? "bg-gold text-black"
-                      : "bg-dark-light text-gray-400 border border-gray-700"
-                  }`}
-                >
-                  {mod.nome}
-                </button>
-              ))}
-            </div>
-          </Field>
-
-          <Field label="Plano desejado">
-            <select
-              value={form.planoId}
-              onChange={(e) => setForm({ ...form, planoId: e.target.value })}
-              className="input-field"
-            >
-              <option value="">Selecione um plano</option>
-              {planos.map((p: any) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome} - R$ {Number(p.valor).toFixed(2)}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {tipo === "professor" && (
+            <p className="text-xs text-gray-500 bg-dark-light rounded-lg p-3">
+              Apos o cadastro, um administrador precisa aprovar seu acesso. As modalidades e a grade
+              de aulas sao configuradas pelo admin no painel.
+            </p>
+          )}
 
           <button
             type="submit"

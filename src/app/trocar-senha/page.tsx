@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -10,6 +10,24 @@ export default function TrocarSenhaPage() {
   const [senhaConfirm, setSenhaConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState("");
+  const [perfil, setPerfil] = useState<string | null>(null);
+  const [senhaTemporaria, setSenhaTemporaria] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((me) => {
+        setPerfil(me.perfil);
+        setSenhaTemporaria(!!me.senhaTemporaria);
+      })
+      .catch(() => { /* ignore */ });
+  }, []);
+
+  function destinoPerfil() {
+    if (perfil === "aluno") return "/aluno/perfil";
+    if (perfil === "professor") return "/professor/perfil";
+    return "/dashboard";
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,7 +51,6 @@ export default function TrocarSenhaPage() {
     try {
       const supabase = createClient();
 
-      // Atualizar senha e limpar flag
       const { error } = await supabase.auth.updateUser({
         password: senha,
         data: { senha_temporaria: false },
@@ -45,17 +62,7 @@ export default function TrocarSenhaPage() {
         return;
       }
 
-      // Redirecionar baseado no perfil
-      const res = await fetch("/api/me");
-      const me = await res.json();
-
-      if (me.perfil === "aluno") {
-        router.push("/aluno");
-      } else if (me.perfil === "professor") {
-        router.push("/professor");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push(destinoPerfil());
     } catch (err: any) {
       setErro("Erro: " + err.message);
       setLoading(false);
@@ -76,7 +83,9 @@ export default function TrocarSenhaPage() {
           />
           <h1 className="text-2xl font-black text-gold">Trocar Senha</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Sua senha e temporaria. Crie uma nova senha para continuar.
+            {senhaTemporaria
+              ? "Sua senha e temporaria. Crie uma nova senha para continuar."
+              : "Defina uma nova senha para sua conta."}
           </p>
         </div>
 
@@ -116,6 +125,16 @@ export default function TrocarSenhaPage() {
           >
             {loading ? "Salvando..." : "Salvar nova senha"}
           </button>
+
+          {!senhaTemporaria && (
+            <button
+              type="button"
+              onClick={() => router.push(destinoPerfil())}
+              className="w-full py-3 rounded-lg border border-gray-700 text-gray-300 font-medium"
+            >
+              Cancelar
+            </button>
+          )}
         </form>
       </div>
     </div>

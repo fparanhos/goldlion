@@ -33,13 +33,13 @@ export async function GET(request: NextRequest) {
 
   const { data } = await supabase
     .from("perfis")
-    .select("perfil, nome")
+    .select("perfil, nome, email, telefone, status")
     .eq("id", user.id)
     .single();
 
   const senhaTemporaria = user.user_metadata?.senha_temporaria === true;
 
-  // Se for aluno, buscar status para verificar se esta pendente
+  // Status do aluno (plano: ativo/inadimplente/...) — mantido para compat
   let statusAluno = null;
   if (data?.perfil === "aluno") {
     const { data: alunoData } = await supabase
@@ -53,6 +53,9 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     perfil: data?.perfil || null,
     nome: data?.nome || null,
+    email: data?.email || user.email || null,
+    telefone: data?.telefone || null,
+    status: data?.status || "ativo",
     senhaTemporaria,
     statusAluno,
   });

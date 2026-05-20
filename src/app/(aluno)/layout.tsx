@@ -17,7 +17,10 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
               <img src="/logo-gold.png" alt="Gold Lion" width={32} height={32} className="rounded-full" />
               <h1 className="text-lg font-bold text-gold">Gold Lion</h1>
             </div>
-            <LogoutButton />
+            <div className="flex items-center gap-3">
+              <PerfilLink />
+              <LogoutButton />
+            </div>
           </div>
         </header>
         <main className="pb-20 px-4 py-4">{children}</main>
@@ -25,6 +28,26 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
         <PwaUpdater />
       </div>
     </ModalidadesProvider>
+  );
+}
+
+function PerfilLink() {
+  const pathname = usePathname();
+  const href = pathname.startsWith("/professor") ? "/professor/perfil" : "/aluno/perfil";
+  const ativo = pathname === href;
+  return (
+    <Link
+      href={href}
+      className={`text-xs flex items-center gap-1 ${
+        ativo ? "text-gold" : "text-gray-400 hover:text-gold"
+      }`}
+      aria-label="Meu perfil"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+      </svg>
+      Perfil
+    </Link>
   );
 }
 

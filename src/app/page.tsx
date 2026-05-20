@@ -44,11 +44,17 @@ export default function LoginPage() {
       const res = await fetch("/api/me");
       const me = await res.json();
 
-      // Se aluno pendente, bloquear acesso
-      if (me.perfil === "aluno" && me.statusAluno === "pendente") {
-        // Fazer logout
+      // Pendente (aluno ou professor) — bloqueia ate aprovacao do admin
+      const pendente =
+        me.status === "pendente" ||
+        (me.perfil === "aluno" && me.statusAluno === "pendente");
+      if (pendente) {
         await supabase.auth.signOut();
-        setErro("Seu cadastro esta aguardando aprovacao de um professor. Tente novamente mais tarde.");
+        setErro(
+          me.perfil === "professor"
+            ? "Seu cadastro de professor esta aguardando aprovacao do administrador."
+            : "Seu cadastro esta aguardando aprovacao de um professor. Tente novamente mais tarde."
+        );
         setLoading(false);
         return;
       }

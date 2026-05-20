@@ -64,11 +64,27 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { nome, email, senha, telefone, cpf, dataNascimento, contatoEmergencia, telefoneEmergencia, modalidades, planoId, observacoes, autoCadastro } = body;
+    const {
+      nome,
+      email,
+      senha,
+      telefone,
+      cpf,
+      dataNascimento,
+      contatoEmergencia,
+      telefoneEmergencia,
+      modalidades,
+      planoId,
+      observacoes,
+      autoCadastro,
+      tipoCadastro,
+    } = body;
+
+    const ehProfessor = tipoCadastro === "professor";
+    const perfilTipo: "aluno" | "professor" = ehProfessor ? "professor" : "aluno";
 
     const emailFinal = email || `${(cpf || "").replace(/\D/g, "") || Date.now()}@goldlion.app`;
 
-    // Criar usuario via admin API (sem trigger)
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: emailFinal,
       password: senha || "123456",
@@ -81,22 +97,25 @@ export async function POST(request: NextRequest) {
 
     const userId = authData.user.id;
 
-    // Criar perfil manualmente (trigger removido)
     const { error: perfilError } = await supabase.from("perfis").insert({
       id: userId,
       nome: nome,
       email: emailFinal,
       telefone: telefone || null,
-      perfil: "aluno",
+      perfil: perfilTipo,
+      status: autoCadastro ? "pendente" : "ativo",
     });
 
     if (perfilError) {
-      // Rollback: deletar usuario auth se perfil falhar
       await supabase.auth.admin.deleteUser(userId);
       return NextResponse.json({ error: "Erro ao criar perfil: " + perfilError.message }, { status: 400 });
     }
 
-    // Criar registro aluno
+    // Professor nao tem registro em `alunos`
+    if (ehProfessor) {
+      return NextResponse.json({ success: true, id: userId, tipoCadastro: "professor" });
+    }
+
     const dataInicio = new Date().toISOString().split("T")[0];
     const dataFim = new Date();
     dataFim.setMonth(dataFim.getMonth() + 1);
@@ -119,7 +138,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Erro ao criar aluno: " + alunoError.message }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, id: userId });
+    return NextResponse.json({ success: true, id: userId, tipoCadastro: "aluno" });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
