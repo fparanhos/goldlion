@@ -16,18 +16,28 @@
 # misc
 .DS_Store
 *.pem
+Thumbs.db
+desktop.ini
 
 # debug
 npm-debug.log*
 
-# local env files
+# env (locais e produção - nunca commitar segredos)
+.env
 .env*.local
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
+# vercel
 .vercel
 
-# Claude Code local config (nunca commitar)
+# Claude Code local config (varia por maquina, pode ter secrets)
 .claude/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
