@@ -129,10 +129,16 @@ export default function CheckInPage() {
 
   async function validarCheckin(checkinId: string) {
     try {
-      const supabase = createClient();
-      await supabase.from("checkins").update({ validado: true }).eq("id", checkinId);
+      const res = await fetch(`/api/checkins/${checkinId}/validar`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Falha ao validar check-in");
+        return;
+      }
       setHistorico((prev) => prev.map((c) => (c.id === checkinId ? { ...c, validado: true } : c)));
-    } catch { /* */ }
+    } catch (err: any) {
+      alert("Erro ao validar: " + (err.message || ""));
+    }
   }
 
   async function excluirCheckin(checkinId: string) {
