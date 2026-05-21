@@ -6,10 +6,13 @@ import { createClient, isDemoMode } from "@/lib/supabase/client";
 import { pagamentos as mockPags, alunos as mockAlunos } from "@/lib/mock-data";
 import { formatarMoeda, formatarData, corStatusPagamento, corStatus } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
+import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
 import type { StatusPagamento } from "@/types";
 
 export default function FinanceiroPage() {
+  const { modalidadesAtivas } = useModalidades();
   const [filtro, setFiltro] = useState<StatusPagamento | "todos" | "sinalizados">("todos");
+  const [modalidadeFiltro, setModalidadeFiltro] = useState<string>("todas");
   const [pagamentos, setPagamentos] = useState<any[]>([]);
   const [resumo, setResumo] = useState({ recebido: 0, pendente: 0, atrasado: 0, sinalizados: 0 });
   const [modalRegistrar, setModalRegistrar] = useState<string | null>(null);
@@ -23,7 +26,7 @@ export default function FinanceiroPage() {
         const supabase = createClient();
         let query = supabase
           .from("pagamentos")
-          .select("*, alunos!inner(id, status, perfis!inner(nome))")
+          .select("*, alunos!inner(id, status, modalidades, perfis!inner(nome))")
           .order("data_vencimento", { ascending: false });
 
         if (filtro === "sinalizados") {
@@ -34,12 +37,22 @@ export default function FinanceiroPage() {
 
         const { data, error } = await query;
         if (error) throw error;
-        setPagamentos(data || []);
+        const filtradosPorModalidade =
+          modalidadeFiltro === "todas"
+            ? (data || [])
+            : (data || []).filter((p: any) => p.alunos?.modalidades?.includes(modalidadeFiltro));
+        setPagamentos(filtradosPorModalidade);
 
-        // Resumo
-        const { data: todos } = await supabase.from("pagamentos").select("valor, status, sinalizado_em");
+        // Resumo (respeita filtro de modalidade)
+        const { data: todos } = await supabase
+          .from("pagamentos")
+          .select("valor, status, sinalizado_em, alunos!inner(modalidades)");
+        const resumoBase =
+          modalidadeFiltro === "todas"
+            ? (todos || [])
+            : (todos || []).filter((p: any) => p.alunos?.modalidades?.includes(modalidadeFiltro));
         const r = { recebido: 0, pendente: 0, atrasado: 0, sinalizados: 0 };
-        todos?.forEach((p) => {
+        resumoBase.forEach((p: any) => {
           if (p.status === "pago") r.recebido += Number(p.valor);
           if (p.status === "pendente") r.pendente += Number(p.valor);
           if (p.status === "atrasado") r.atrasado += Number(p.valor);
@@ -49,12 +62,18 @@ export default function FinanceiroPage() {
       } catch {
         // Mock
         const pags = filtro === "todos" ? mockPags : mockPags.filter((p) => p.status === filtro);
-        setPagamentos(
-          pags.map((p) => ({
-            ...p,
-            alunos: { perfis: { nome: mockAlunos.find((a) => a.id === p.alunoId)?.nome } },
-          }))
-        );
+        const pagsComAluno = pags.map((p) => ({
+          ...p,
+          alunos: {
+            perfis: { nome: mockAlunos.find((a) => a.id === p.alunoId)?.nome },
+            modalidades: mockAlunos.find((a) => a.id === p.alunoId)?.modalidades || [],
+          },
+        }));
+        const filtradosMock =
+          modalidadeFiltro === "todas"
+            ? pagsComAluno
+            : pagsComAluno.filter((p) => p.alunos.modalidades.includes(modalidadeFiltro));
+        setPagamentos(filtradosMock);
         setResumo({
           recebido: mockPags.filter((p) => p.status === "pago").reduce((a, p) => a + p.valor, 0),
           pendente: mockPags.filter((p) => p.status === "pendente").reduce((a, p) => a + p.valor, 0),
@@ -65,7 +84,7 @@ export default function FinanceiroPage() {
       setLoading(false);
     }
     fetchData();
-  }, [filtro]);
+  }, [filtro, modalidadeFiltro]);
 
   async function registrarPagamento(pagId: string, forma: string) {
     try {
@@ -169,6 +188,34 @@ export default function FinanceiroPage() {
           </button>
         ))}
       </div>
+
+      {/* Filtro por modalidade */}
+      {modalidadesAtivas.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-gray-500 flex-shrink-0">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h18M6 12h12M10 19.5h4" />
+          </svg>
+          <button
+            onClick={() => setModalidadeFiltro("todas")}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+              modalidadeFiltro === "todas" ? "bg-gold text-black" : "bg-dark-light text-gray-400"
+            }`}
+          >
+            Todas
+          </button>
+          {modalidadesAtivas.map((m) => (
+            <button
+              key={m.slug}
+              onClick={() => setModalidadeFiltro(m.slug)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                modalidadeFiltro === m.slug ? "bg-gold text-black" : "bg-dark-light text-gray-400"
+              }`}
+            >
+              {m.nome}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Lista */}
       <div className="space-y-2">
