@@ -98,13 +98,16 @@ export async function POST(request: NextRequest) {
 
     const userId = authData.user.id;
 
+    // Auto-cadastro: aluno entra ativo direto, professor segue precisando de aprovação
+    const statusPerfil = autoCadastro && ehProfessor ? "pendente" : "ativo";
+
     const { error: perfilError } = await supabase.from("perfis").insert({
       id: userId,
       nome: nome,
       email: emailFinal,
       telefone: telefone || null,
       perfil: perfilTipo,
-      status: autoCadastro ? "pendente" : "ativo",
+      status: statusPerfil,
     });
 
     if (perfilError) {
@@ -129,7 +132,7 @@ export async function POST(request: NextRequest) {
       telefone_emergencia: telefoneEmergencia || null,
       modalidades: modalidades || [],
       plano_id: planoId || null,
-      status: autoCadastro ? "pendente" : "ativo",
+      status: "ativo",
       data_inicio_plano: dataInicio,
       data_fim_plano: dataFim.toISOString().split("T")[0],
       observacoes: observacoes || null,
@@ -139,9 +142,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Erro ao criar aluno: " + alunoError.message }, { status: 400 });
     }
 
-    // Admin criando direto (não autoCadastro) com plano → já gera a primeira mensalidade.
-    // Auto-cadastro fica pendente: a primeira mensalidade é gerada na aprovação.
-    if (!autoCadastro && planoId) {
+    // Aluno entra ativo direto (admin ou auto-cadastro). Com plano, gera primeira mensalidade.
+    if (planoId) {
       const r = await gerarPrimeiraMensalidadeSeNecessario(supabase, userId);
       if (r.erro) {
         console.error("[alunos POST] falha ao gerar primeira mensalidade:", r.erro);

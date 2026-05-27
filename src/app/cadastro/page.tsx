@@ -117,25 +117,36 @@ export default function CadastroPage() {
   }
 
   if (sucesso) {
+    const ehProfessor = tipo === "professor";
     return (
       <div className="min-h-screen bg-dark flex items-center justify-center px-6">
         <div className="text-center space-y-4 max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center mx-auto">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-8 h-8 text-orange-500">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+            ehProfessor ? "bg-orange-500/20" : "bg-success/20"
+          }`}>
+            {ehProfessor ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-8 h-8 text-orange-500">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-8 h-8 text-success">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            )}
           </div>
-          <h2 className="text-xl font-bold text-white">Cadastro enviado!</h2>
+          <h2 className="text-xl font-bold text-white">
+            {ehProfessor ? "Cadastro enviado!" : "Cadastro concluido!"}
+          </h2>
           <p className="text-gray-400 text-sm">
-            {tipo === "professor"
+            {ehProfessor
               ? "Seu cadastro de professor foi recebido e esta aguardando a aprovacao de um administrador. Voce recebera acesso assim que for aprovado."
-              : "Seu cadastro foi recebido e esta aguardando a aprovacao de um professor. Voce recebera acesso assim que for aprovado."}
+              : "Sua conta esta pronta. Entre com seu email e senha pra comecar."}
           </p>
           <a
             href="/"
             className="inline-block mt-4 px-6 py-3 rounded-lg bg-gold text-black font-bold text-sm hover:bg-gold-light transition-colors"
           >
-            Voltar ao Login
+            {ehProfessor ? "Voltar ao Login" : "Entrar agora"}
           </a>
         </div>
       </div>
