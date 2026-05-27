@@ -2,6 +2,7 @@
 
 import { createServerSupabase } from "@/lib/supabase/server";
 import { criarCobrancaAsaas } from "@/lib/asaas";
+import { gerarProximaMensalidade } from "@/lib/mensalidades";
 import { revalidatePath } from "next/cache";
 
 export async function listarPagamentos(filtros?: {
@@ -99,6 +100,12 @@ export async function registrarPagamentoManual(
 ) {
   const supabase = await createServerSupabase();
 
+  const { data: pag } = await supabase
+    .from("pagamentos")
+    .select("aluno_id, data_vencimento")
+    .eq("id", pagamentoId)
+    .single();
+
   const { error } = await supabase
     .from("pagamentos")
     .update({
@@ -110,6 +117,14 @@ export async function registrarPagamentoManual(
 
   if (error) {
     return { error: error.message };
+  }
+
+  if (pag) {
+    const base = new Date(`${pag.data_vencimento}T00:00:00`);
+    const r = await gerarProximaMensalidade(supabase, pag.aluno_id, base);
+    if (r.erro && r.erro !== "Aluno sem plano vinculado") {
+      console.error("[pagamentos] falha ao gerar proxima mensalidade:", r.erro);
+    }
   }
 
   revalidatePath("/financeiro");

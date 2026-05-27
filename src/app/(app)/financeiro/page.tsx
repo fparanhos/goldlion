@@ -7,7 +7,10 @@ import { pagamentos as mockPags, alunos as mockAlunos } from "@/lib/mock-data";
 import { formatarMoeda, formatarData, corStatusPagamento, corStatus } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
+import { registrarPagamentoManual } from "@/lib/actions/pagamentos";
 import type { StatusPagamento } from "@/types";
+
+type FormaPagamento = "pix" | "cartao" | "dinheiro" | "boleto";
 
 export default function FinanceiroPage() {
   const { modalidadesAtivas } = useModalidades();
@@ -18,6 +21,7 @@ export default function FinanceiroPage() {
   const [modalRegistrar, setModalRegistrar] = useState<string | null>(null);
   const [modalComprovante, setModalComprovante] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -84,40 +88,18 @@ export default function FinanceiroPage() {
       setLoading(false);
     }
     fetchData();
-  }, [filtro, modalidadeFiltro]);
+  }, [filtro, modalidadeFiltro, refreshKey]);
 
-  async function registrarPagamento(pagId: string, forma: string) {
-    try {
-      const supabase = createClient();
-      await supabase
-        .from("pagamentos")
-        .update({
-          status: "pago",
-          data_pagamento: new Date().toISOString().split("T")[0],
-          forma_pagamento: forma,
-        })
-        .eq("id", pagId);
-    } catch {
-      // mock
+  async function registrarPagamento(pagId: string, forma: FormaPagamento) {
+    const r = await registrarPagamentoManual(pagId, forma);
+    if (r.error) {
+      alert("Erro ao registrar pagamento: " + r.error);
+      return;
     }
     setModalRegistrar(null);
-    setPagamentos((prev) =>
-      prev.map((p) =>
-        p.id === pagId
-          ? { ...p, status: "pago", data_pagamento: new Date().toISOString().split("T")[0], forma_pagamento: forma }
-          : p
-      )
-    );
-    setResumo((prev) => {
-      const pag = pagamentos.find((p) => p.id === pagId);
-      const val = Number(pag?.valor || 0);
-      return {
-        recebido: prev.recebido + val,
-        pendente: pag?.status === "pendente" ? prev.pendente - val : prev.pendente,
-        atrasado: pag?.status === "atrasado" ? prev.atrasado - val : prev.atrasado,
-        sinalizados: pag?.sinalizado_em ? prev.sinalizados - 1 : prev.sinalizados,
-      };
-    });
+    // Re-fetch para refletir o status atualizado E mostrar a próxima mensalidade
+    // gerada automaticamente pelo server action.
+    setRefreshKey((k) => k + 1);
   }
 
   async function rejeitarComprovante(pagId: string) {

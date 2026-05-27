@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { gerarProximaMensalidade } from "@/lib/mensalidades";
 
 // Usar service role para bypass RLS no webhook
 function createAdminClient() {
@@ -23,7 +24,12 @@ export async function POST(request: NextRequest) {
     switch (event) {
       case "PAYMENT_RECEIVED":
       case "PAYMENT_CONFIRMED": {
-        // Pagamento confirmado - atualizar status
+        const { data: pagAtual } = await supabase
+          .from("pagamentos")
+          .select("id, aluno_id, data_vencimento")
+          .eq("asaas_payment_id", payment.id)
+          .single();
+
         const { error } = await supabase
           .from("pagamentos")
           .update({
@@ -44,6 +50,15 @@ export async function POST(request: NextRequest) {
             .update({ status: "ativo" })
             .eq("asaas_customer_id", payment.customer)
             .eq("status", "inadimplente");
+        }
+
+        // Gerar próxima mensalidade (idempotente)
+        if (pagAtual) {
+          const base = new Date(`${pagAtual.data_vencimento}T00:00:00`);
+          const r = await gerarProximaMensalidade(supabase, pagAtual.aluno_id, base);
+          if (r.erro && r.erro !== "Aluno sem plano vinculado") {
+            console.error("[webhook Asaas] falha ao gerar proxima mensalidade:", r.erro);
+          }
         }
         break;
       }

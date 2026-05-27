@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { gerarPrimeiraMensalidadeSeNecessario } from "@/lib/mensalidades";
 
 function getSupabase() {
   return createClient(
@@ -136,6 +137,15 @@ export async function POST(request: NextRequest) {
 
     if (alunoError) {
       return NextResponse.json({ error: "Erro ao criar aluno: " + alunoError.message }, { status: 400 });
+    }
+
+    // Admin criando direto (não autoCadastro) com plano → já gera a primeira mensalidade.
+    // Auto-cadastro fica pendente: a primeira mensalidade é gerada na aprovação.
+    if (!autoCadastro && planoId) {
+      const r = await gerarPrimeiraMensalidadeSeNecessario(supabase, userId);
+      if (r.erro) {
+        console.error("[alunos POST] falha ao gerar primeira mensalidade:", r.erro);
+      }
     }
 
     return NextResponse.json({ success: true, id: userId, tipoCadastro: "aluno" });
