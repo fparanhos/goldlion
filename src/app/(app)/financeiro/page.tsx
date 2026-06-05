@@ -7,7 +7,7 @@ import { pagamentos as mockPags, alunos as mockAlunos } from "@/lib/mock-data";
 import { formatarMoeda, formatarData, corStatusPagamento, corStatus } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import { useModalidades } from "@/lib/modalidades/ModalidadesProvider";
-import { registrarPagamentoManual } from "@/lib/actions/pagamentos";
+import { registrarPagamentoManual, reverterPagamento } from "@/lib/actions/pagamentos";
 import type { StatusPagamento } from "@/types";
 
 type FormaPagamento = "pix" | "cartao" | "dinheiro" | "boleto";
@@ -16,6 +16,8 @@ export default function FinanceiroPage() {
   const { modalidadesAtivas } = useModalidades();
   const [filtro, setFiltro] = useState<StatusPagamento | "todos" | "sinalizados">("todos");
   const [modalidadeFiltro, setModalidadeFiltro] = useState<string>("todas");
+  const [competenciaFiltro, setCompetenciaFiltro] = useState<string>("todas");
+  const [competencias, setCompetencias] = useState<string[]>([]);
   const [pagamentos, setPagamentos] = useState<any[]>([]);
   const [resumo, setResumo] = useState({ recebido: 0, pendente: 0, atrasado: 0, sinalizados: 0 });
   const [modalRegistrar, setModalRegistrar] = useState<string | null>(null);
@@ -39,6 +41,10 @@ export default function FinanceiroPage() {
           query = query.eq("status", filtro);
         }
 
+        if (competenciaFiltro !== "todas") {
+          query = query.eq("referencia", competenciaFiltro);
+        }
+
         const { data, error } = await query;
         if (error) throw error;
         const filtradosPorModalidade =
@@ -47,10 +53,14 @@ export default function FinanceiroPage() {
             : (data || []).filter((p: any) => p.alunos?.modalidades?.includes(modalidadeFiltro));
         setPagamentos(filtradosPorModalidade);
 
-        // Resumo (respeita filtro de modalidade)
-        const { data: todos } = await supabase
+        // Resumo (respeita filtros de modalidade e competencia)
+        let resumoQuery = supabase
           .from("pagamentos")
-          .select("valor, status, sinalizado_em, alunos!inner(modalidades)");
+          .select("valor, status, sinalizado_em, referencia, alunos!inner(modalidades)");
+        if (competenciaFiltro !== "todas") {
+          resumoQuery = resumoQuery.eq("referencia", competenciaFiltro);
+        }
+        const { data: todos } = await resumoQuery;
         const resumoBase =
           modalidadeFiltro === "todas"
             ? (todos || [])
@@ -88,7 +98,28 @@ export default function FinanceiroPage() {
       setLoading(false);
     }
     fetchData();
-  }, [filtro, modalidadeFiltro, refreshKey]);
+  }, [filtro, modalidadeFiltro, competenciaFiltro, refreshKey]);
+
+  useEffect(() => {
+    async function fetchCompetencias() {
+      try {
+        if (isDemoMode) throw new Error("demo");
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("pagamentos")
+          .select("referencia, data_vencimento")
+          .order("data_vencimento", { ascending: false });
+        const set = new Set<string>();
+        (data || []).forEach((r: any) => r.referencia && set.add(r.referencia));
+        setCompetencias(Array.from(set));
+      } catch {
+        const set = new Set<string>();
+        mockPags.forEach((p: any) => p.referencia && set.add(p.referencia));
+        setCompetencias(Array.from(set));
+      }
+    }
+    fetchCompetencias();
+  }, [refreshKey]);
 
   async function registrarPagamento(pagId: string, forma: FormaPagamento) {
     const r = await registrarPagamentoManual(pagId, forma);
@@ -99,6 +130,18 @@ export default function FinanceiroPage() {
     setModalRegistrar(null);
     // Re-fetch para refletir o status atualizado E mostrar a próxima mensalidade
     // gerada automaticamente pelo server action.
+    setRefreshKey((k) => k + 1);
+  }
+
+  async function reverterPagamentoHandler(pagId: string) {
+    if (!confirm("Reverter este pagamento para pendente? A proxima mensalidade gerada automaticamente sera apagada se ainda estiver pendente.")) {
+      return;
+    }
+    const r = await reverterPagamento(pagId);
+    if (r.error) {
+      alert("Erro ao reverter: " + r.error);
+      return;
+    }
     setRefreshKey((k) => k + 1);
   }
 
@@ -154,6 +197,25 @@ export default function FinanceiroPage() {
         >
           {resumo.sinalizados} comprovante(s) aguardando confirmacao
         </button>
+      )}
+
+      {/* Filtro por competencia (mes/ano) */}
+      {competencias.length > 0 && (
+        <div className="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4 text-gray-500 flex-shrink-0">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+          </svg>
+          <select
+            value={competenciaFiltro}
+            onChange={(e) => setCompetenciaFiltro(e.target.value)}
+            className="flex-1 bg-dark-light text-gray-200 text-xs rounded-lg px-3 py-2 border border-gray-700 focus:outline-none focus:border-gold"
+          >
+            <option value="todas">Todas as competencias</option>
+            {competencias.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
       )}
 
       {/* Filtros */}
@@ -238,6 +300,15 @@ export default function FinanceiroPage() {
               <p className="text-xs text-gray-500">
                 Pago em {formatarData(pag.data_pagamento || pag.dataPagamento)} via {(pag.forma_pagamento || pag.formaPagamento || "").toUpperCase()}
               </p>
+            )}
+
+            {pag.status === "pago" && (
+              <button
+                onClick={() => reverterPagamentoHandler(pag.id)}
+                className="w-full py-2 rounded-lg bg-danger/10 text-danger text-xs font-medium border border-danger/30"
+              >
+                Reverter para pendente
+              </button>
             )}
 
             {/* Comprovante enviado pelo aluno */}

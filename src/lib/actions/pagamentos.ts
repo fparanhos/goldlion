@@ -2,7 +2,7 @@
 
 import { createServerSupabase } from "@/lib/supabase/server";
 import { criarCobrancaAsaas } from "@/lib/asaas";
-import { gerarProximaMensalidade } from "@/lib/mensalidades";
+import { gerarProximaMensalidade, calcularProximoVencimento, referenciaMesAno } from "@/lib/mensalidades";
 import { revalidatePath } from "next/cache";
 
 export async function listarPagamentos(filtros?: {
@@ -137,6 +137,69 @@ export async function cancelarPagamento(pagamentoId: string) {
   const { error } = await supabase
     .from("pagamentos")
     .update({ status: "cancelado" })
+    .eq("id", pagamentoId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/financeiro");
+  return { success: true };
+}
+
+export async function reverterPagamento(pagamentoId: string) {
+  const supabase = await createServerSupabase();
+
+  const { data: pag, error: errBusca } = await supabase
+    .from("pagamentos")
+    .select("aluno_id, data_vencimento, status")
+    .eq("id", pagamentoId)
+    .single();
+
+  if (errBusca || !pag) {
+    return { error: errBusca?.message || "Pagamento nao encontrado" };
+  }
+
+  if (pag.status !== "pago") {
+    return { error: "So e possivel reverter pagamentos com status pago" };
+  }
+
+  // Calcula a referencia da proxima mensalidade (gerada automaticamente
+  // quando o admin marcou este como pago) e apaga ela se ainda estiver
+  // pendente.
+  const base = new Date(`${pag.data_vencimento}T00:00:00`);
+  const referenciaProxima = referenciaMesAno(calcularProximoVencimento(base));
+
+  const { data: proxima } = await supabase
+    .from("pagamentos")
+    .select("id, status, asaas_payment_id")
+    .eq("aluno_id", pag.aluno_id)
+    .eq("referencia", referenciaProxima)
+    .maybeSingle();
+
+  if (proxima && proxima.status === "pendente") {
+    if (proxima.asaas_payment_id) {
+      console.warn(
+        "[reverterPagamento] proxima mensalidade tem asaas_payment_id, cobranca no Asaas pode permanecer ativa:",
+        proxima.asaas_payment_id,
+      );
+    }
+    const { error: errDel } = await supabase
+      .from("pagamentos")
+      .delete()
+      .eq("id", proxima.id);
+    if (errDel) {
+      return { error: `Falha ao remover proxima mensalidade: ${errDel.message}` };
+    }
+  }
+
+  const { error } = await supabase
+    .from("pagamentos")
+    .update({
+      status: "pendente",
+      data_pagamento: null,
+      forma_pagamento: null,
+    })
     .eq("id", pagamentoId);
 
   if (error) {
