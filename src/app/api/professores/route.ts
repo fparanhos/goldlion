@@ -6,15 +6,18 @@ export async function GET() {
   if (auth.erro) return auth.erro;
   const supabase = getSupabaseAdmin();
 
-  const { data, error } = await supabase
+  // Professores + admins que tambem dao aula (perfis.leciona)
+  const { data: perfis, error } = await supabase
     .from("perfis")
     .select("*")
-    .eq("perfil", "professor")
+    .in("perfil", ["professor", "admin"])
     .order("nome");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  const data = perfis.filter((p: any) => p.perfil === "professor" || p.leciona === true);
 
   const profIds = data.map((p: any) => p.id);
   const { data: aulas } = await supabase
@@ -82,7 +85,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, nome, telefone, status } = body;
+    const { id, nome, telefone, status, leciona } = body;
 
     if (!id) return NextResponse.json({ error: "ID obrigatorio" }, { status: 400 });
 
@@ -92,6 +95,7 @@ export async function PUT(request: NextRequest) {
     if (status && ["pendente", "ativo", "inativo"].includes(status)) {
       updates.status = status;
     }
+    if (typeof leciona === "boolean") updates.leciona = leciona;
 
     if (Object.keys(updates).length > 0) {
       const { error } = await supabase.from("perfis").update(updates).eq("id", id);
@@ -115,6 +119,15 @@ export async function DELETE(request: NextRequest) {
   if (!id) return NextResponse.json({ error: "ID obrigatorio" }, { status: 400 });
 
   try {
+    // Admins aparecem na lista quando lecionam, mas nao sao excluidos por aqui
+    const { data: alvo } = await supabase.from("perfis").select("perfil").eq("id", id).single();
+    if (alvo?.perfil === "admin") {
+      return NextResponse.json(
+        { error: "Este usuario e administrador. Use 'Parar de lecionar' para tira-lo da lista." },
+        { status: 400 }
+      );
+    }
+
     // Verificar aulas vinculadas
     const { data: aulas, error: aulasErr } = await supabase
       .from("aulas")

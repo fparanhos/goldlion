@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const titles: Record<string, string> = {
@@ -21,7 +21,18 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuAberto, setMenuAberto] = useState(false);
+  const [leciona, setLeciona] = useState(false);
   const title = titles[pathname] || "Gold Lion";
+
+  // Admin que tambem da aula ganha atalho para a area do professor
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from("perfis").select("leciona").eq("id", user.id).single();
+      setLeciona(data?.leciona === true);
+    });
+  }, []);
 
   async function handleLogout() {
     const supabase = createClient();
@@ -62,6 +73,17 @@ export default function Header() {
                 >
                   Dashboard
                 </button>
+                {leciona && (
+                  <button
+                    onClick={() => {
+                      setMenuAberto(false);
+                      router.push("/professor");
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gold hover:bg-dark-lighter"
+                  >
+                    Area do professor
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setMenuAberto(false);

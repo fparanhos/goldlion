@@ -32,7 +32,8 @@ export async function POST(
 
   const { error } = await supabase
     .from("perfis")
-    .update({ perfil: "admin", atualizado_em: new Date().toISOString() })
+    // Continua professor: leciona mantem ele na lista e nas aulas
+    .update({ perfil: "admin", leciona: true, atualizado_em: new Date().toISOString() })
     .eq("id", id)
     .eq("perfil", "professor");
 

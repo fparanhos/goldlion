@@ -126,7 +126,7 @@ export default function ProfessoresPage() {
     const ok = confirm(
       `Tornar "${prof.nome}" administrador?\n\n` +
       `Ele passa a ter acesso total ao sistema (alunos, financeiro, professores) ` +
-      `e sai da lista de professores. As aulas dele continuam vinculadas.`
+      `e continua como professor, com as mesmas aulas.`
     );
     if (!ok) return;
     try {
@@ -134,6 +134,30 @@ export default function ProfessoresPage() {
       const data = await res.json();
       if (!res.ok) {
         alert("Erro: " + (data.error || "Falha ao tornar administrador"));
+        return;
+      }
+      fetchProfessores();
+    } catch (err: any) {
+      alert("Erro: " + err.message);
+    }
+  }
+
+  async function pararDeLecionar(prof: any) {
+    const totalAulas = (prof.aulas || []).length;
+    const ok = confirm(
+      `"${prof.nome}" deixa de aparecer como professor, mas continua administrador.` +
+      (totalAulas > 0 ? `\n\nAtencao: ele ainda tem ${totalAulas} aula(s). Reatribua-as na Grade Horaria.` : "")
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch("/api/professores", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: prof.id, leciona: false }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Erro: " + (data.error || "Falha ao atualizar"));
         return;
       }
       fetchProfessores();
@@ -273,6 +297,7 @@ export default function ProfessoresPage() {
       <div className="space-y-3">
         {professores.map((prof: any) => {
           const pendente = prof.status === "pendente";
+          const ehAdmin = prof.perfil === "admin";
           return (
           <div
             key={prof.id}
@@ -294,6 +319,11 @@ export default function ProfessoresPage() {
                       Pendente
                     </span>
                   )}
+                  {ehAdmin && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-gold/20 text-gold uppercase">
+                      Admin
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-gray-400">{prof.email}</p>
                 {prof.telefone && <p className="text-xs text-gray-400">{prof.telefone}</p>}
@@ -313,20 +343,31 @@ export default function ProfessoresPage() {
                 >
                   Editar
                 </button>
-                {!pendente && (
+                {ehAdmin ? (
                   <button
-                    onClick={() => tornarAdmin(prof)}
+                    onClick={() => pararDeLecionar(prof)}
                     className="px-3 py-1.5 rounded-lg text-xs bg-dark text-gray-300 border border-gray-600"
                   >
-                    Tornar admin
+                    Parar de lecionar
                   </button>
+                ) : (
+                  <>
+                    {!pendente && (
+                      <button
+                        onClick={() => tornarAdmin(prof)}
+                        className="px-3 py-1.5 rounded-lg text-xs bg-dark text-gray-300 border border-gray-600"
+                      >
+                        Tornar admin
+                      </button>
+                    )}
+                    <button
+                      onClick={() => excluirProfessor(prof)}
+                      className="px-3 py-1.5 rounded-lg text-xs bg-dark text-danger border border-danger/30"
+                    >
+                      {pendente ? "Rejeitar" : "Excluir"}
+                    </button>
+                  </>
                 )}
-                <button
-                  onClick={() => excluirProfessor(prof)}
-                  className="px-3 py-1.5 rounded-lg text-xs bg-dark text-danger border border-danger/30"
-                >
-                  {pendente ? "Rejeitar" : "Excluir"}
-                </button>
               </div>
             </div>
             <div className="flex gap-1.5 flex-wrap">

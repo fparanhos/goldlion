@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -18,6 +19,7 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
               <h1 className="text-lg font-bold text-gold">Gold Lion</h1>
             </div>
             <div className="flex items-center gap-3">
+              <AdminLink />
               <PerfilLink />
               <LogoutButton />
             </div>
@@ -28,6 +30,27 @@ export default function AlunoLayout({ children }: { children: React.ReactNode })
         <PwaUpdater />
       </div>
     </ModalidadesProvider>
+  );
+}
+
+// Admin que tambem da aula volta para o painel administrativo
+function AdminLink() {
+  const [ehAdmin, setEhAdmin] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from("perfis").select("perfil").eq("id", user.id).single();
+      setEhAdmin(data?.perfil === "admin");
+    });
+  }, []);
+
+  if (!ehAdmin) return null;
+  return (
+    <Link href="/dashboard" className="text-xs text-gold hover:underline">
+      Admin
+    </Link>
   );
 }
 
