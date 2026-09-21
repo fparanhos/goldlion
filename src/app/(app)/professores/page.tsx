@@ -122,6 +122,26 @@ export default function ProfessoresPage() {
     }
   }
 
+  async function tornarAdmin(prof: any) {
+    const ok = confirm(
+      `Tornar "${prof.nome}" administrador?\n\n` +
+      `Ele passa a ter acesso total ao sistema (alunos, financeiro, professores) ` +
+      `e sai da lista de professores. As aulas dele continuam vinculadas.`
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/professores/${prof.id}/admin`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Erro: " + (data.error || "Falha ao tornar administrador"));
+        return;
+      }
+      fetchProfessores();
+    } catch (err: any) {
+      alert("Erro: " + err.message);
+    }
+  }
+
   async function excluirProfessor(prof: any) {
     const totalAulas = (prof.aulas || []).length;
 
@@ -278,7 +298,7 @@ export default function ProfessoresPage() {
                 <p className="text-xs text-gray-400">{prof.email}</p>
                 {prof.telefone && <p className="text-xs text-gray-400">{prof.telefone}</p>}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap justify-end">
                 {pendente && (
                   <button
                     onClick={() => aprovarProfessor(prof)}
@@ -293,6 +313,14 @@ export default function ProfessoresPage() {
                 >
                   Editar
                 </button>
+                {!pendente && (
+                  <button
+                    onClick={() => tornarAdmin(prof)}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-dark text-gray-300 border border-gray-600"
+                  >
+                    Tornar admin
+                  </button>
+                )}
                 <button
                   onClick={() => excluirProfessor(prof)}
                   className="px-3 py-1.5 rounded-lg text-xs bg-dark text-danger border border-danger/30"
