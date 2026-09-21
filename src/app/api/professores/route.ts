@@ -59,13 +59,14 @@ export async function POST(request: NextRequest) {
 
     const userId = authData.user.id;
 
-    const { error: perfilError } = await supabase.from("perfis").insert({
+    // upsert: o trigger handle_new_user (auth.users) ja cria o perfil basico
+    const { error: perfilError } = await supabase.from("perfis").upsert({
       id: userId,
       nome,
       email,
       telefone: telefone || null,
       perfil: "professor",
-    });
+    }, { onConflict: "id" });
 
     if (perfilError) {
       await supabase.auth.admin.deleteUser(userId);

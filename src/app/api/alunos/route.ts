@@ -101,14 +101,15 @@ export async function POST(request: NextRequest) {
     // Auto-cadastro: aluno entra ativo direto, professor segue precisando de aprovação
     const statusPerfil = autoCadastro && ehProfessor ? "pendente" : "ativo";
 
-    const { error: perfilError } = await supabase.from("perfis").insert({
+    // upsert: o trigger handle_new_user (auth.users) ja cria o perfil basico
+    const { error: perfilError } = await supabase.from("perfis").upsert({
       id: userId,
       nome: nome,
       email: emailFinal,
       telefone: telefone || null,
       perfil: perfilTipo,
       status: statusPerfil,
-    });
+    }, { onConflict: "id" });
 
     if (perfilError) {
       await supabase.auth.admin.deleteUser(userId);
