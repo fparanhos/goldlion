@@ -1,15 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { exigirPerfil, getSupabaseAdmin } from "@/lib/auth/api";
 
 export const dynamic = "force-dynamic";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 function gerarSlug(nome: string): string {
   return nome
@@ -21,7 +13,8 @@ function gerarSlug(nome: string): string {
 }
 
 export async function GET(request: NextRequest) {
-  const supabase = getSupabase();
+  // Leitura publica: usada pela tela /cadastro
+  const supabase = getSupabaseAdmin();
   const { searchParams } = new URL(request.url);
   const ativasOnly = ["1", "true"].includes(searchParams.get("ativas") ?? "");
 
@@ -34,7 +27,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
   const body = await request.json();
   const { nome, cor, ordem } = body;
 
@@ -69,7 +64,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
   const body = await request.json();
   const { slug, ...updates } = body;
 

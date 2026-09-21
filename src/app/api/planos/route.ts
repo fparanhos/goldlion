@@ -1,16 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
+import { exigirPerfil, getSupabaseAdmin } from "@/lib/auth/api";
 
 export async function GET() {
-  const supabase = getSupabase();
+  // Leitura publica: usada pela tela /cadastro
+  const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("planos")
     .select("*")
@@ -21,7 +14,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
   const body = await request.json();
 
   const { nome, tipo, modalidades, valor } = body;
@@ -43,7 +38,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
   const body = await request.json();
   const { id, ...updates } = body;
 

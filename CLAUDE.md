@@ -110,6 +110,9 @@ Veja `.env.example`. Resumo das que importam:
 - **Asaas (pagamento)**
   - `ASAAS_API_KEY` — token da API
   - `ASAAS_BASE_URL` — URL base (sandbox vs producao)
+  - `ASAAS_WEBHOOK_TOKEN` — mesmo token cadastrado no webhook do painel Asaas (chega no header `asaas-access-token`). Sem ele o webhook recusa tudo (401)
+- **Cron**
+  - `CRON_SECRET` — opcional; se definido, `/api/cron/keepalive` so aceita chamadas da Vercel
 - **Academia (geolocalizacao para validar check-in)**
   - `NEXT_PUBLIC_ACADEMIA_LAT` — latitude
   - `NEXT_PUBLIC_ACADEMIA_LNG` — longitude

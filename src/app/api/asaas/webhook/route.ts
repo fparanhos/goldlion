@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { timingSafeEqual } from "crypto";
+import { getSupabaseAdmin } from "@/lib/auth/api";
 import { gerarProximaMensalidade } from "@/lib/mensalidades";
 
-// Usar service role para bypass RLS no webhook
-function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+// O Asaas envia no header `asaas-access-token` o token cadastrado na
+// configuracao do webhook (painel Asaas > Integracoes > Webhooks).
+// Sem ASAAS_WEBHOOK_TOKEN configurado, todas as chamadas sao recusadas.
+function tokenValido(recebido: string | null): boolean {
+  const esperado = process.env.ASAAS_WEBHOOK_TOKEN;
+  if (!esperado || !recebido) return false;
+  const a = Buffer.from(recebido);
+  const b = Buffer.from(esperado);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export async function POST(request: NextRequest) {
+  if (!tokenValido(request.headers.get("asaas-access-token"))) {
+    console.warn("[webhook Asaas] chamada recusada: token ausente ou invalido");
+    return NextResponse.json({ error: "Nao autorizado" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { event, payment } = body;
@@ -19,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Payload invalido" }, { status: 400 });
     }
 
-    const supabase = createAdminClient();
+    const supabase = getSupabaseAdmin();
 
     switch (event) {
       case "PAYMENT_RECEIVED":
