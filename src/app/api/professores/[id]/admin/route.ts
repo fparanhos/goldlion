@@ -1,7 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { exigirPerfil, getSupabaseAdmin } from "@/lib/auth/api";
 
 export const dynamic = "force-dynamic";
 
@@ -12,38 +10,9 @@ export async function POST(
 ) {
   const { id } = await params;
 
-  const cookieStore = await cookies();
-  const authServer = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll() { /* read-only */ },
-      },
-    }
-  );
-
-  const { data: { user } } = await authServer.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Nao autenticado" }, { status: 401 });
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-
-  const { data: chamador } = await supabase
-    .from("perfis")
-    .select("perfil, status")
-    .eq("id", user.id)
-    .single();
-
-  if (chamador?.perfil !== "admin" || chamador?.status !== "ativo") {
-    return NextResponse.json({ error: "Apenas administradores podem fazer isso" }, { status: 403 });
-  }
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
 
   const { data: alvo } = await supabase
     .from("perfis")

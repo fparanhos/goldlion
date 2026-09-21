@@ -1,17 +1,12 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { exigirPerfil, getChamador, getSupabaseAdmin } from "@/lib/auth/api";
 import { gerarPrimeiraMensalidadeSeNecessario } from "@/lib/mensalidades";
 
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
-
 export async function GET(request: NextRequest) {
-  const supabase = getSupabase();
+  // Professor tambem lista alunos (tela de presenca)
+  const auth = await exigirPerfil(["admin", "professor"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
   const { searchParams } = new URL(request.url);
   const pagina = parseInt(searchParams.get("pagina") || "0");
   const porPagina = parseInt(searchParams.get("porPagina") || "20");
@@ -61,7 +56,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = getSupabase();
+  // Rota publica (tela /cadastro) e tambem usada pelo admin (alunos/novo).
+  // Quem nao e admin cai sempre nas regras de auto-cadastro.
+  const chamador = await getChamador();
+  const ehAdmin = chamador?.perfil === "admin";
+  const supabase = getSupabaseAdmin();
 
   try {
     const body = await request.json();
@@ -76,10 +75,19 @@ export async function POST(request: NextRequest) {
       telefoneEmergencia,
       modalidades,
       planoId,
-      observacoes,
-      autoCadastro,
-      tipoCadastro,
     } = body;
+    const observacoes = ehAdmin ? body.observacoes : null;
+    const autoCadastro = ehAdmin ? body.autoCadastro : true;
+    const tipoCadastro = body.tipoCadastro;
+
+    if (!ehAdmin) {
+      if (!nome || !email) {
+        return NextResponse.json({ error: "Nome e email sao obrigatorios" }, { status: 400 });
+      }
+      if (typeof senha !== "string" || senha.length < 6) {
+        return NextResponse.json({ error: "A senha deve ter no minimo 6 caracteres" }, { status: 400 });
+      }
+    }
 
     const ehProfessor = tipoCadastro === "professor";
     const perfilTipo: "aluno" | "professor" = ehProfessor ? "professor" : "aluno";

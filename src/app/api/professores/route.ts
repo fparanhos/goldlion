@@ -1,16 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
+import { exigirPerfil, getSupabaseAdmin } from "@/lib/auth/api";
 
 export async function GET() {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
 
   const { data, error } = await supabase
     .from("perfis")
@@ -41,7 +35,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
 
   try {
     const body = await request.json();
@@ -80,7 +76,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
 
   try {
     const body = await request.json();
@@ -107,7 +105,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
   const force = searchParams.get("force") === "1";

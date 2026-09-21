@@ -1,21 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { exigirPerfil, getSupabaseAdmin } from "@/lib/auth/api";
 import { gerarPrimeiraMensalidadeSeNecessario } from "@/lib/mensalidades";
-
-function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
 
   try {
     const [alunoRes, pagsRes, ciRes] = await Promise.all([
@@ -56,7 +50,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
 
   try {
     const body = await request.json();
@@ -132,7 +128,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = getSupabase();
+  const auth = await exigirPerfil(["admin"]);
+  if (auth.erro) return auth.erro;
+  const supabase = getSupabaseAdmin();
 
   try {
     // Garantir que e mesmo um aluno (evita deletar admin/professor por engano)
