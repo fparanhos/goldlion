@@ -142,6 +142,34 @@ export default function ProfessoresPage() {
     }
   }
 
+  async function resetarSenha(prof: any) {
+    const novaSenha = prompt(
+      `Nova senha temporaria para "${prof.nome}" (minimo 6 caracteres).\n` +
+      `Ele(a) sera obrigado(a) a trocar no proximo login.`,
+      "goldlion123"
+    );
+    if (novaSenha === null) return;
+    if (novaSenha.length < 6) {
+      alert("A senha deve ter no minimo 6 caracteres");
+      return;
+    }
+    try {
+      const res = await fetch("/api/professores", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: prof.id, resetSenha: true, novaSenha }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Erro: " + (data.error || "Falha ao resetar senha"));
+        return;
+      }
+      alert(`Senha resetada.\n\nLogin: ${prof.email}\nSenha temporaria: ${novaSenha}`);
+    } catch (err: any) {
+      alert("Erro: " + err.message);
+    }
+  }
+
   async function pararDeLecionar(prof: any) {
     const totalAulas = (prof.aulas || []).length;
     const ok = confirm(
@@ -343,6 +371,14 @@ export default function ProfessoresPage() {
                 >
                   Editar
                 </button>
+                {!pendente && (
+                  <button
+                    onClick={() => resetarSenha(prof)}
+                    className="px-3 py-1.5 rounded-lg text-xs bg-dark text-warning border border-warning/30"
+                  >
+                    Resetar senha
+                  </button>
+                )}
                 {ehAdmin ? (
                   <button
                     onClick={() => pararDeLecionar(prof)}

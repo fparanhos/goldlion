@@ -85,9 +85,25 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, nome, telefone, status, leciona } = body;
+    const { id, nome, telefone, status, leciona, resetSenha, novaSenha } = body;
 
     if (!id) return NextResponse.json({ error: "ID obrigatorio" }, { status: 400 });
+
+    // Resetar senha: vira temporaria e o usuario troca no proximo login
+    if (resetSenha) {
+      if (typeof novaSenha !== "string" || novaSenha.length < 6) {
+        return NextResponse.json({ error: "A senha deve ter no minimo 6 caracteres" }, { status: 400 });
+      }
+      const { data: alvo } = await supabase.from("perfis").select("perfil").eq("id", id).single();
+      if (alvo?.perfil !== "professor" && alvo?.perfil !== "admin") {
+        return NextResponse.json({ error: "Usuario nao e professor" }, { status: 400 });
+      }
+      const { error } = await supabase.auth.admin.updateUserById(id, {
+        password: novaSenha,
+        user_metadata: { senha_temporaria: true },
+      });
+      if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    }
 
     const updates: any = {};
     if (nome) updates.nome = nome;
